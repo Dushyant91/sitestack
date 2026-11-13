@@ -164,6 +164,7 @@ export function evaluateRule(
     version,
     confidenceScore,
     confidenceTier: getConfidenceTier(confidenceScore),
+    isInferred: false,
     evidence: matchedEvidence,
     website: rule.website,
     icon: rule.icon,
@@ -173,6 +174,8 @@ export function evaluateRule(
 
 /**
  * Resolves implied technology dependencies (e.g. Next.js implies React)
+ * Inferred technologies are explicitly marked with isInferred: true and
+ * evidence type: 'inferred' to ensure they are never misrepresented as directly confirmed.
  */
 export function resolveImpliedTechnologies(
   detectedMap: Map<string, DetectedTechnology>,
@@ -188,19 +191,20 @@ export function resolveImpliedTechnologies(
       if (!parentRule) continue;
 
       if (!existing) {
-        // Automatically add implied technology with High confidence if parent is High
-        const impliedScore = Math.max(75, Math.min(95, detected.confidenceScore));
+        // Calibrate inferred confidence: lower than direct confirmation, capped at 85
+        const impliedScore = Math.min(85, Math.max(60, Math.round(detected.confidenceScore * 0.85)));
         detectedMap.set(impliedId, {
           id: parentRule.id,
           name: parentRule.name,
           category: parentRule.category,
           confidenceScore: impliedScore,
           confidenceTier: getConfidenceTier(impliedScore),
+          isInferred: true,
           evidence: [
             {
-              type: 'global',
-              source: `Inferred dependency of ${detected.name}`,
-              weight: 60,
+              type: 'inferred',
+              source: `Inferred dependency of ${detected.name} (architectural framework requirement)`,
+              weight: impliedScore,
             },
           ],
           website: parentRule.website,

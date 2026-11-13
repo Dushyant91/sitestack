@@ -12,12 +12,19 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    lib: {
-      entry: path.resolve(__dirname, 'src/engine/index.ts'),
-      name: 'SiteStackEngine',
-      fileName: (format) => `sitestack-engine.${format}.js`,
-      formats: ['es'],
-    },
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        'service-worker': path.resolve(__dirname, 'src/extension/background/service-worker.ts'),
+        'isolated-probe': path.resolve(__dirname, 'src/extension/content/isolated-probe.ts'),
+        'main-probe': path.resolve(__dirname, 'src/extension/content/main-probe.ts'),
+        'engine': path.resolve(__dirname, 'src/engine/index.ts'),
+      },
+      output: {
+        entryFileNames: '[name].js',
+        chunkFileNames: 'chunks/[name]-[hash].js',
+        format: 'es',
+      },
+    },
   },
 });

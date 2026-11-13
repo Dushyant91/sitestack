@@ -10,7 +10,7 @@ export type TechCategory =
 
 export type ConfidenceTier = 'high' | 'medium' | 'low';
 
-export type SignalType = 'global' | 'meta' | 'dom' | 'resource' | 'header';
+export type SignalType = 'global' | 'meta' | 'dom' | 'resource' | 'header' | 'inferred';
 
 export interface SignalEvidence {
   type: SignalType;
@@ -103,6 +103,7 @@ export interface DetectedTechnology {
   version?: string;
   confidenceScore: number; // 0 - 100
   confidenceTier: ConfidenceTier;
+  isInferred?: boolean; // True if inferred from parent dependency (e.g. Next.js -> React) rather than direct detection
   evidence: SignalEvidence[];
   website: string;
   icon: string;
