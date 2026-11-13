@@ -15,7 +15,6 @@ export const infrastructureRules: TechRule[] = [
       ],
       resources: [
         { urlRegex: /static\.cloudflareinsights\.com\/beacon(?:\.min)?\.js/i, weight: 45 },
-        { urlRegex: /challenges\.cloudflare\.com\/turnstile\//i, weight: 45 },
       ],
     },
   },

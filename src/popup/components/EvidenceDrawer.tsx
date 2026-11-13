@@ -3,6 +3,8 @@ import { SignalEvidence, SignalType } from '../../engine/types';
 import { Info, ArrowUpRight, GitFork } from 'lucide-react';
 
 interface EvidenceDrawerProps {
+  technologyId?: string;
+  version?: string;
   evidence: SignalEvidence[];
   confidenceScore: number;
   isInferred?: boolean;
@@ -22,6 +24,8 @@ const TYPE_BADGES: Record<SignalType, { label: string; color: string }> = {
 };
 
 export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
+  technologyId,
+  version,
   evidence,
   confidenceScore,
   isInferred,
@@ -58,6 +62,27 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
           )}
         </div>
 
+        {evidence.filter((ev) => ev.type !== 'inferred').length > 0 && (
+          <div className="space-y-1.5 pt-1.5 border-t border-violet-500/20">
+            <span className="text-zinc-400 text-[9px] uppercase tracking-wider block font-semibold">
+              Observed Supporting Signals:
+            </span>
+            {evidence
+              .filter((ev) => ev.type !== 'inferred')
+              .map((ev, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-1.5 rounded bg-zinc-900/60 border border-violet-500/20 text-[10px]"
+                >
+                  <code className="text-zinc-300 truncate max-w-[200px]" title={ev.source}>
+                    {ev.source}
+                  </code>
+                  <span className="text-violet-400 font-mono text-[9px]">+{ev.weight}</span>
+                </div>
+              ))}
+          </div>
+        )}
+
         {website && (
           <div className="pt-1 flex items-center justify-between text-[10px] font-sans border-t border-violet-500/20">
             <span className="text-zinc-500">Official Website</span>
@@ -92,6 +117,15 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
         <div className="p-2 rounded bg-indigo-950/20 border border-indigo-500/25 text-[10px] text-zinc-300 font-sans leading-relaxed">
           <span className="text-indigo-300 font-semibold block mb-0.5">Detection Analysis:</span>
           {confidenceReason}
+        </div>
+      )}
+
+      {technologyId === 'nextjs' && !version && (
+        <div className="p-2 rounded bg-amber-500/10 border border-amber-500/25 text-[10px] text-amber-200/90 font-sans leading-relaxed flex items-start gap-1.5">
+          <Info className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+          <span>
+            Next.js detected. The production build does not expose a reliable framework version, so SiteStack cannot determine the exact version.
+          </span>
         </div>
       )}
 

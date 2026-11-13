@@ -95,6 +95,8 @@ export const libraryRules: TechRule[] = [
         // Verified Tailwind CSS internal CSS custom property footprints
         { selector: 'style:has-text(--tw-)', weight: 45 },
         { selector: 'style:has-text(--tw-ring-offset-shadow)', weight: 55 },
+        // Distinctive Tailwind utility combinations in sampled DOM elements
+        { selector: 'dom:tailwind-utilities', weight: 50 },
       ],
       resources: [
         { urlRegex: /tailwind(?:css)?(?:\.min)?\.css/i, weight: 40 },

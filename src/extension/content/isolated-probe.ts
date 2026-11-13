@@ -113,6 +113,48 @@ export function harvestIsolatedSignals(): IsolatedProbePayload {
       // Ignore stylesheet security restrictions
     }
 
+    // Check for Tailwind CSS distinctive utility classes on sampled DOM elements
+    // Inspects first 30 elements for combinations of distinctive utility patterns without full DOM traversal
+    try {
+      const sampleElements = Array.from(document.querySelectorAll('body, body *')).slice(0, 30);
+      const variantRegex = /(?:^|\s)(?:sm|md|lg|xl|2xl|dark|hover|focus|active|group-hover|focus-within|peer-checked|disabled):[a-z0-9-]+/;
+      const spacingRegex = /(?:^|\s)-?(?:space-[xy]|divide-[xy]|inset-[xy]|translate-[xy])-[0-9.]+/;
+      const paletteRegex = /(?:^|\s)(?:bg|text|border|ring)-(?:slate|zinc|neutral|stone|emerald|indigo|violet|rose|amber|cyan|sky|teal|fuchsia|lime)-[0-9]{2,3}(?:\/[0-9]+)?/;
+      const arbitraryRegex = /(?:^|\s)(?:bg|text|border|w|h|min-w|min-h|max-w|max-h|p|m|top|bottom|left|right|grid-cols|grid-rows)-\[[^\]]+\]/;
+      const ringRegex = /(?:^|\s)ring(?:-offset)?-[0-9]+/;
+
+      let variantCount = 0;
+      let spacingCount = 0;
+      let paletteCount = 0;
+      let arbitraryCount = 0;
+      let ringCount = 0;
+
+      for (const el of sampleElements) {
+        const cls = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
+        if (!cls) continue;
+        if (variantRegex.test(cls)) variantCount++;
+        if (spacingRegex.test(cls)) spacingCount++;
+        if (paletteRegex.test(cls)) paletteCount++;
+        if (arbitraryRegex.test(cls)) arbitraryCount++;
+        if (ringRegex.test(cls)) ringCount++;
+      }
+
+      let categories = 0;
+      if (variantCount > 0) categories++;
+      if (spacingCount > 0) categories++;
+      if (paletteCount > 0) categories++;
+      if (arbitraryCount > 0) categories++;
+      if (ringCount > 0) categories++;
+
+      const totalMatches = variantCount + spacingCount + paletteCount + arbitraryCount + ringCount;
+      // Require multiple distinct utility categories or strong variant usage across elements
+      if ((categories >= 2 && totalMatches >= 3) || (variantCount >= 2 && totalMatches >= 3)) {
+        dom.push({ selector: 'dom:tailwind-utilities' });
+      }
+    } catch {
+      // Graceful fallback
+    }
+
     // Check for Vue.js scoped CSS attributes on root container and descendants
     try {
       const rootContainer = document.querySelector('#app, [id="__nuxt"], [data-v-app]');

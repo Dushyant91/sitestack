@@ -91,6 +91,8 @@ export const TechCard: React.FC<TechCardProps> = ({
       {/* Expandable Evidence Drawer */}
       {isExpanded && (
         <EvidenceDrawer
+          technologyId={technology.id}
+          version={technology.version}
           evidence={technology.evidence}
           confidenceScore={technology.confidenceScore}
           isInferred={technology.isInferred}

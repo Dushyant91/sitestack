@@ -216,6 +216,11 @@ export function evaluateRule(
     confidenceReason = `Low confidence (Direct): Identified via standalone network asset (${primary}) without corroborating runtime globals or DOM elements.`;
   }
 
+  // Next.js version transparency note
+  if (rule.id === 'nextjs' && !version) {
+    confidenceReason += ' Next.js detected. The production build does not expose a reliable framework version, so SiteStack cannot determine the exact version.';
+  }
+
   return {
     id: rule.id,
     name: rule.name,
@@ -274,6 +279,14 @@ export function resolveImpliedTechnologies(
         if (impliedId === 'react' && detected.id === 'nextjs') {
           return ev.type === 'global' || (ev.type === 'dom' && ev.source.includes('[data-reactroot]'));
         }
+        if (impliedId === 'wordpress' && detected.id === 'woocommerce') {
+          // If WooCommerce is detected with High confidence (>= 80), WordPress requires independent core proof (>= 50)
+          // beyond isolated WooCommerce plugin asset URLs (/wp-content/plugins/woocommerce/)
+          if (detected.confidenceScore >= SCORE_HIGH_THRESHOLD) {
+            return existing.confidenceScore >= 50;
+          }
+          return true;
+        }
         return ev.type !== 'inferred';
       });
 
@@ -294,25 +307,39 @@ export function resolveImpliedTechnologies(
         }
 
         const tier = getConfidenceTier(impliedScore);
-        const reason = `Architectural dependency: Inferred with ${tier} confidence (${impliedScore} pts) because ${detected.name} is built upon ${impliedRule.name}. No direct browser runtime globals were exposed.`;
+
+        // Preserve any existing direct evidence as supporting signals
+        const preservedDirect = existing ? existing.evidence.filter((e) => e.type !== 'inferred') : [];
+        const primaryDirect = preservedDirect[0]?.source;
+
+        let reason = '';
+        if (impliedId === 'wordpress' && detected.id === 'woocommerce' && primaryDirect) {
+          reason = `Architectural dependency: Inferred with ${tier} confidence (${impliedScore} pts) because WooCommerce is built upon WordPress, supported by observed asset path (${primaryDirect}). Direct WordPress core evidence was below the independent threshold.`;
+        } else {
+          reason = `Architectural dependency: Inferred with ${tier} confidence (${impliedScore} pts) because ${detected.name} is built upon ${impliedRule.name}. No direct browser runtime globals were exposed.`;
+        }
+
+        const combinedEvidence: SignalEvidence[] = [
+          {
+            type: 'inferred',
+            source: `Architectural dependency of ${detected.name} (${detected.name} requires ${impliedRule.name})`,
+            weight: impliedScore,
+          },
+          ...preservedDirect,
+        ];
 
         detectedMap.set(impliedId, {
           id: impliedRule.id,
           name: impliedRule.name,
           category: impliedRule.category,
+          version: existing?.version,
           confidenceScore: impliedScore,
           confidenceTier: tier,
           detectionType: 'inferred',
           parentDependency: detected.name,
           confidenceReason: reason,
           isInferred: true,
-          evidence: [
-            {
-              type: 'inferred',
-              source: `Architectural dependency of ${detected.name} (${detected.name} requires ${impliedRule.name})`,
-              weight: impliedScore,
-            },
-          ],
+          evidence: combinedEvidence,
           website: impliedRule.website,
           icon: impliedRule.icon,
           description: impliedRule.description,
