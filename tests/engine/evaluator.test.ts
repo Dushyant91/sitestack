@@ -9,6 +9,7 @@ describe('Detection Engine Evaluator', () => {
       globals: {
         __NEXT_DATA__: { buildId: 'xyz123', page: '/' },
         next: { version: '14.2.3' },
+        va: {},
       },
       dom: [
         { selector: '#__next' },

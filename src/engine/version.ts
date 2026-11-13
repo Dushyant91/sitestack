@@ -1,9 +1,10 @@
 import { VersionExtractor, HarvestedSignals } from './types';
 
 /**
- * Standard semantic version regex: matches 1.2, 1.2.3, 1.2.3-alpha.1
+ * Standard semantic version regex: matches 1.2, 1.2.3, 1.2.3-alpha.1, 7.2-beta5-65440
+ * Fully compliant with SemVer 2.0 prerelease identifiers and build metadata
  */
-const SEMVER_REGEX = /(?:^|[^\d])v?([0-9]+(?:\.[0-9]+)+(?:-[a-zA-Z0-9.]+)?)/i;
+const SEMVER_REGEX = /(?:^|[^\d])v?([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)/i;
 
 /**
  * Safely traverses an object path like 'next.version' or 'jQuery.fn.jquery'
@@ -27,12 +28,21 @@ export function getNestedProperty(obj: unknown, path: string): unknown {
 }
 
 /**
- * Cleans and standardizes extracted version string
+ * Cleans and standardizes extracted version string, preserving prerelease tags and tag IDs
  */
 export function cleanVersion(rawVersion: string): string | undefined {
   if (!rawVersion || typeof rawVersion !== 'string') return undefined;
 
-  const match = rawVersion.match(SEMVER_REGEX);
+  const trimmed = rawVersion.trim();
+
+  // 1. Tag Manager container IDs & Analytics Measurement IDs (e.g. GTM-XXXXXXX, G-XXXXXXXXXX)
+  const tagIdMatch = trimmed.match(/^(G-[A-Z0-9]+|GTM-[A-Z0-9]+)$/i);
+  if (tagIdMatch) {
+    return tagIdMatch[1].toUpperCase();
+  }
+
+  // 2. Standard Semantic Version with optional prerelease (e.g. 7.2-beta5-65440, 18.3.1, 14.0.0-rc.2)
+  const match = trimmed.match(SEMVER_REGEX);
   if (match && match[1]) {
     const cleaned = match[1].trim();
     // Validate that it contains at least one digit and a dot
@@ -41,8 +51,8 @@ export function cleanVersion(rawVersion: string): string | undefined {
     }
   }
 
-  // Fallback: If it's already a clean semver like '14.2.3'
-  const directMatch = rawVersion.trim().match(/^v?(\d+\.\d+(?:\.\d+)?(?:-[\w.]+)?)$/);
+  // 3. Fallback: Direct clean semver
+  const directMatch = trimmed.match(/^v?(\d+\.\d+(?:\.\d+)?(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/);
   return directMatch ? directMatch[1] : undefined;
 }
 

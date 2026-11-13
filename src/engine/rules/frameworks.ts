@@ -41,21 +41,38 @@ export const frameworkRules: TechRule[] = [
       globals: [
         { path: 'Vue', weight: 60 },
         { path: '__VUE__', weight: 60 },
+        { path: '__VUE_DEVTOOLS_GLOBAL_HOOK__', weight: 45 },
       ],
       dom: [
-        { selector: '[data-v-app]', weight: 45 },
-        { selector: '*[data-v-]', weight: 35 },
+        { selector: '[data-v-app]', weight: 50 },
+        { selector: '[data-v-scoped]', weight: 45 },
+        { selector: 'style:has-text([data-v-])', weight: 40 },
       ],
       resources: [
-        { urlRegex: /vue(?:\.runtime)?(?:\.global)?(?:\.prod|\.min)?\.js/i, weight: 35 },
+        { urlRegex: /(?:^|\/|@)vue(?:\.runtime)?(?:\.global)?(?:\.esm-browser)?(?:\.prod|\.min)?\.js(?:\?|#|$)/i, weight: 35 },
       ],
     },
     versionExtraction: {
       fromGlobal: 'Vue.version',
       fromResource: {
-        urlRegex: /vue@([\d.]+)/i,
+        urlRegex: /vue@([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)/i,
         captureGroup: 1,
       },
+    },
+  },
+  {
+    id: 'vitepress',
+    name: 'VitePress',
+    category: 'framework',
+    website: 'https://vitepress.dev',
+    icon: '/tech-icons/frameworks/vue.svg',
+    description: 'Vite & Vue-powered Static Site Generator.',
+    implies: ['vue'],
+    signals: {
+      globals: [
+        { path: '__VITEPRESS__', weight: 60 },
+        { path: '__VP_HASH_MAP__', weight: 60 },
+      ],
     },
   },
   {
@@ -83,7 +100,7 @@ export const frameworkRules: TechRule[] = [
       fromDom: {
         selector: '[ng-version]',
         attribute: 'ng-version',
-        regex: /([\d.]+)/,
+        regex: /([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)/,
       },
     },
   },

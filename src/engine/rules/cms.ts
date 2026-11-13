@@ -32,10 +32,11 @@ export const cmsRules: TechRule[] = [
     versionExtraction: {
       fromMeta: {
         name: 'generator',
-        regex: /WordPress\s*([\d.]+)/i,
+        // Captures stable versions, betas, release candidates, and builds (e.g. 7.2-beta5-65440)
+        regex: /WordPress\s*([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)/i,
       },
       fromResource: {
-        urlRegex: /\/wp-emoji-release\.min\.js\?ver=([\d.]+)/i,
+        urlRegex: /\/wp-emoji-release\.min\.js\?ver=([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)/i,
         captureGroup: 1,
       },
     },

@@ -55,7 +55,7 @@ export function evaluateRule(
   }
 
   // 2. Evaluate Meta Tags (DOM)
-  if (rule.signals.meta) {
+  if (rule.signals.meta && Array.isArray(signals.meta)) {
     for (const m of rule.signals.meta) {
       for (const harvestedMeta of signals.meta) {
         const nameMatch = m.name && harvestedMeta.name?.toLowerCase() === m.name.toLowerCase();
@@ -78,7 +78,7 @@ export function evaluateRule(
   }
 
   // 3. Evaluate DOM Selectors (DOM)
-  if (rule.signals.dom) {
+  if (rule.signals.dom && Array.isArray(signals.dom)) {
     for (const d of rule.signals.dom) {
       for (const harvestedDom of signals.dom) {
         if (harvestedDom.selector === d.selector) {
@@ -100,7 +100,7 @@ export function evaluateRule(
   }
 
   // 4. Evaluate Resources (Performance Timing / Script URLs)
-  if (rule.signals.resources) {
+  if (rule.signals.resources && Array.isArray(signals.resources)) {
     for (const r of rule.signals.resources) {
       for (const url of signals.resources) {
         if (r.urlRegex.test(url)) {
@@ -138,8 +138,33 @@ export function evaluateRule(
     return null;
   }
 
-  // Calculate Base Weight Sum
-  const baseWeightSum = matchedEvidence.reduce((sum, ev) => sum + ev.weight, 0);
+  // Calculate Base Weight Sum with diminishing returns for correlated signals within the same class
+  // The highest signal in a class counts at 100%; subsequent signals in the same class count at 50%
+  // Any single signal class is capped at 65 points, ensuring High confidence (>=80) strictly requires
+  // independent cross-signal corroboration across at least 2 distinct signal types.
+  const classWeights: Record<SignalType, number[]> = {
+    global: [],
+    meta: [],
+    dom: [],
+    resource: [],
+    header: [],
+    inferred: [],
+  };
+
+  for (const ev of matchedEvidence) {
+    classWeights[ev.type].push(ev.weight);
+  }
+
+  let baseWeightSum = 0;
+  for (const [, weights] of Object.entries(classWeights)) {
+    if (weights.length === 0) continue;
+    // Sort descending: primary signal first
+    weights.sort((a, b) => b - a);
+    const primary = weights[0];
+    const secondarySum = weights.slice(1).reduce((s, w) => s + w * 0.5, 0);
+    const classTotal = Math.min(65, Math.round(primary + secondarySum));
+    baseWeightSum += classTotal;
+  }
 
   // Cross-Signal Corroboration Bonus
   // Multiplier: 1.0 for 1 signal class, 1.15 for 2 classes, 1.30 for 3+ classes

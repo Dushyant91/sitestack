@@ -27,6 +27,10 @@ export const infrastructureRules: TechRule[] = [
     icon: '/tech-icons/infrastructure/vercel.svg',
     description: 'Frontend cloud platform powering edge deployments and serverless functions.',
     signals: {
+      globals: [
+        { path: 'va', weight: 45 },
+        { path: 'si', weight: 45 },
+      ],
       resources: [
         { urlRegex: /\/_vercel\/insights\/script\.js/i, weight: 45 },
         { urlRegex: /\/_vercel\/speed-insights\/v1\/script\.js/i, weight: 45 },

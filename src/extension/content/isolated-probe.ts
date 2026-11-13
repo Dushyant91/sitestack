@@ -22,7 +22,6 @@ const PROBE_SELECTORS = [
   'app-root',
   '[ng-app]',
   '[data-v-app]',
-  '*[data-v-]',
   'body.woocommerce',
   'body.woocommerce-page',
   '.woocommerce',
@@ -102,9 +101,28 @@ export function harvestIsolatedSignals(): IsolatedProbePayload {
         if (text.includes('--tw-ring-offset-shadow')) {
           dom.push({ selector: 'style:has-text(--tw-ring-offset-shadow)' });
         }
+        if (/\[data-v-[a-f0-9]+\]/i.test(text)) {
+          dom.push({ selector: 'style:has-text([data-v-])' });
+        }
       });
     } catch {
       // Ignore stylesheet security restrictions
+    }
+
+    // Check for Vue.js scoped CSS attributes on root container and descendants
+    try {
+      const rootContainer = document.querySelector('#app, [id="__nuxt"], [data-v-app]');
+      if (rootContainer) {
+        const hasScoped = Array.from(rootContainer.attributes).some((a) => a.name.startsWith('data-v-')) ||
+          Array.from(rootContainer.children).slice(0, 15).some((child) =>
+            Array.from(child.attributes).some((a) => a.name.startsWith('data-v-'))
+          );
+        if (hasScoped) {
+          dom.push({ selector: '[data-v-scoped]' });
+        }
+      }
+    } catch {
+      // Graceful fallback
     }
   } catch {
     // Graceful fallback

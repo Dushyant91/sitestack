@@ -19,6 +19,12 @@ export const analyticsRules: TechRule[] = [
         { urlRegex: /googletagmanager\.com\/gtag\/js\?id=G-/i, weight: 50 },
       ],
     },
+    versionExtraction: {
+      fromResource: {
+        urlRegex: /[?&](?:id|tid)=(G-[A-Z0-9]+)/i,
+        captureGroup: 1,
+      },
+    },
   },
   {
     id: 'google-tag-manager',
@@ -38,6 +44,12 @@ export const analyticsRules: TechRule[] = [
       dom: [
         { selector: 'iframe[src*="googletagmanager.com/ns.html"]', weight: 40 },
       ],
+    },
+    versionExtraction: {
+      fromResource: {
+        urlRegex: /[?&]id=(GTM-[A-Z0-9]+)/i,
+        captureGroup: 1,
+      },
     },
   },
   {

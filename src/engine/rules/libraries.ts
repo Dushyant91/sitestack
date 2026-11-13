@@ -19,8 +19,9 @@ export const libraryRules: TechRule[] = [
         { selector: '[data-react-checksum]', weight: 40 },
       ],
       resources: [
-        { urlRegex: /react(?:\.production|\.development)?(?:\.min)?\.js/i, weight: 35 },
-        { urlRegex: /react-dom(?:\.production|\.development)?(?:\.min)?\.js/i, weight: 35 },
+        // Strictly match dedicated JavaScript runtime scripts, never documentation or data JSON endpoints
+        { urlRegex: /(?:^|\/|@)react(?:\.production|\.development)?(?:\.min)?\.js(?:\?|#|$)/i, weight: 35 },
+        { urlRegex: /(?:^|\/|@)react-dom(?:\.production|\.development)?(?:\.min)?\.js(?:\?|#|$)/i, weight: 35 },
       ],
     },
     versionExtraction: {

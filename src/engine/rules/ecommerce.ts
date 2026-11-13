@@ -67,10 +67,10 @@ export const ecommerceRules: TechRule[] = [
     versionExtraction: {
       fromMeta: {
         name: 'generator',
-        regex: /WooCommerce\s*([\d.]+)/i,
+        regex: /WooCommerce\s*([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)/i,
       },
       fromResource: {
-        urlRegex: /\/plugins\/woocommerce\/.*?ver=([\d.]+)/i,
+        urlRegex: /\/plugins\/woocommerce\/.*?ver=([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)/i,
         captureGroup: 1,
       },
     },
