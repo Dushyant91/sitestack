@@ -42,15 +42,24 @@ export async function performTabScan(
 
   try {
     // 1. Execute Isolated World Probe (DOM & ResourceTiming)
-    const isolatedResults = await chrome.scripting.executeScript({
-      target: { tabId },
-      func: harvestIsolatedSignals,
-    });
+    let isolatedPayload: IsolatedProbePayload = {
+      url: tabUrl,
+      meta: [],
+      dom: [],
+      resources: [],
+    };
+    try {
+      const isolatedResults = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: harvestIsolatedSignals,
+      });
 
-    const isolatedPayload: IsolatedProbePayload =
-      isolatedResults && isolatedResults[0]?.result
-        ? (isolatedResults[0].result as IsolatedProbePayload)
-        : { url: tabUrl, meta: [], dom: [], resources: [] };
+      if (isolatedResults && isolatedResults[0]?.result) {
+        isolatedPayload = isolatedResults[0].result as IsolatedProbePayload;
+      }
+    } catch (isolatedErr) {
+      console.warn('[SiteStack ServiceWorker] Isolated-world probe notice:', isolatedErr);
+    }
 
     // 2. Execute MAIN World Probe (Window Globals Allowlist)
     let globalSignals: Record<string, unknown> = {};

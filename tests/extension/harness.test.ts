@@ -414,4 +414,38 @@ describe('Manifest V3 Extension Harness & Probes', () => {
       expect(getDomainKey('shopify.com')).toBe('shopify.com');
     });
   });
+
+  describe('Probe Serialization & Injection Self-Containment', () => {
+    it('harvestIsolatedSignals should be 100% self-contained and execute from serialized string without closures', () => {
+      // Chrome extensions convert func to string via Function.toString() and execute in target page context
+      const fnString = harvestIsolatedSignals.toString();
+      expect(fnString).toContain('function');
+
+      // Execute in an isolated sandbox with no outer closure variables
+      const isolatedRunner = new Function('return (' + fnString + ')()');
+      const result = isolatedRunner();
+
+      expect(result).toBeDefined();
+      expect(Array.isArray(result.meta)).toBe(true);
+      expect(Array.isArray(result.dom)).toBe(true);
+      expect(Array.isArray(result.resources)).toBe(true);
+      expect(typeof result.url).toBe('string');
+    });
+
+    it('harvestMainSignals should be 100% self-contained and execute from serialized string without closures', () => {
+      const fnString = harvestMainSignals.toString();
+      expect(fnString).toContain('function');
+
+      // Mock a global on window
+      (window as unknown as Record<string, unknown>).React = { version: '18.2.0' };
+      (window as unknown as Record<string, unknown>).__next_f = [1, 2];
+
+      const isolatedRunner = new Function('return (' + fnString + ')()');
+      const result = isolatedRunner();
+
+      expect(result).toBeDefined();
+      expect(result.React).toEqual({ version: '18.2.0' });
+      expect(result.__next_f).toEqual({ rscStream: true, chunkCount: 2 });
+    });
+  });
 });

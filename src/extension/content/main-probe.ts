@@ -3,75 +3,77 @@
  * Executes directly in the page's execution context (world: 'MAIN')
  * Safely inspects an approved allowlist of read-only JavaScript global properties.
  * Returns only serializable JSON primitives back to the service worker.
- */
-
-const APPROVED_GLOBAL_ALLOWLIST = [
-  // CMS
-  'wp',
-  '_wpemojiSettings',
-  'Shopify',
-  'ShopifyAnalytics',
-  'BOOMR',
-  'Webflow',
-  'wixBiSession',
-  'wixPerformanceMeasurements',
-
-  // Frameworks
-  '__NEXT_DATA__',
-  '__next_f',
-  '__next_p',
-  'next',
-  'React',
-  '__REACT_DEVTOOLS_GLOBAL_HOOK__',
-  'Vue',
-  '__VUE__',
-  '__VUE_DEVTOOLS_GLOBAL_HOOK__',
-  '__VP_HASH_MAP__',
-  '__VITEPRESS__',
-  'ng',
-  'getAllAngularRootElements',
-
-  // Libraries
-  'jQuery',
-  '$',
-  'bootstrap',
-
-  // Analytics
-  'gtag',
-  'gaGlobal',
-  'google_tag_data',
-  'google_tag_manager',
-  'dataLayer',
-  'hj',
-  '_hjSettings',
-
-  // Marketing
-  'fbq',
-  '_fbq',
-  '_hsq',
-  'HubSpotConversations',
-  'Intercom',
-  'intercomSettings',
-
-  // Ecommerce & Payments
-  'woocommerce_params',
-  'wc_cart_fragments_params',
-  'Stripe',
-  'Razorpay',
-
-  // Infrastructure
-  '__cfRLUnblockHandlers',
-  'va',
-  'si',
-];
-
-/**
- * Safely inspects allowed window properties and serializes clean snapshot
+ * Completely self-contained: contains no module-level closures or external function calls
+ * so it can be safely serialized and injected via chrome.scripting.executeScript.
  */
 export function harvestMainSignals(): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
   if (typeof window === 'undefined') return result;
+
+  /**
+   * Approved read-only global window properties.
+   * Declared strictly inside function body to ensure self-contained serialization.
+   */
+  const APPROVED_GLOBAL_ALLOWLIST = [
+    // CMS
+    'wp',
+    '_wpemojiSettings',
+    'Shopify',
+    'ShopifyAnalytics',
+    'BOOMR',
+    'Webflow',
+    'wixBiSession',
+    'wixPerformanceMeasurements',
+
+    // Frameworks
+    '__NEXT_DATA__',
+    '__next_f',
+    '__next_p',
+    'next',
+    'React',
+    '__REACT_DEVTOOLS_GLOBAL_HOOK__',
+    'Vue',
+    '__VUE__',
+    '__VUE_DEVTOOLS_GLOBAL_HOOK__',
+    '__VP_HASH_MAP__',
+    '__VITEPRESS__',
+    'ng',
+    'getAllAngularRootElements',
+
+    // Libraries
+    'jQuery',
+    '$',
+    'bootstrap',
+
+    // Analytics
+    'gtag',
+    'gaGlobal',
+    'google_tag_data',
+    'google_tag_manager',
+    'dataLayer',
+    'hj',
+    '_hjSettings',
+
+    // Marketing
+    'fbq',
+    '_fbq',
+    '_hsq',
+    'HubSpotConversations',
+    'Intercom',
+    'intercomSettings',
+
+    // Ecommerce & Payments
+    'woocommerce_params',
+    'wc_cart_fragments_params',
+    'Stripe',
+    'Razorpay',
+
+    // Infrastructure
+    '__cfRLUnblockHandlers',
+    'va',
+    'si',
+  ];
 
   for (const key of APPROVED_GLOBAL_ALLOWLIST) {
     try {

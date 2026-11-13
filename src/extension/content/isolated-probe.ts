@@ -8,43 +8,46 @@ export interface IsolatedProbePayload {
 }
 
 /**
- * Known structural DOM selectors to probe without parsing full page body
- */
-const PROBE_SELECTORS = [
-  '#__next',
-  'script#__NEXT_DATA__',
-  'meta[name="next-head-count"]',
-  'link[href*="/_next/static/"]',
-  '[data-reactroot]',
-  '[data-reactid]',
-  '[data-react-checksum]',
-  '[ng-version]',
-  'app-root',
-  '[ng-app]',
-  '[data-v-app]',
-  'body.woocommerce',
-  'body.woocommerce-page',
-  '.woocommerce',
-  'html[data-wf-page]',
-  'html[data-wf-site]',
-  'link[href*="cdn.shopify.com"]',
-  'link[rel*="https://api.w.org/"]',
-  'link[rel="EditURI"][type="application/rsd+xml"]',
-  'link[href*="bootstrap"]',
-  'input[name="shopify-digital-wallet"]',
-  'iframe[src*="js.stripe.com"]',
-  'script[src*="js.stripe.com"]',
-  'iframe[src*="checkout.razorpay.com"]',
-  'iframe[src*="googletagmanager.com/ns.html"]',
-  'script[src*="jquery"]',
-];
-
-/**
  * Harvests DOM meta tags, structural selectors, and ResourceTiming asset URLs
  * Strictly read-only: never alters DOM, never accesses user input or passwords.
+ * Completely self-contained: contains no module-level closures or external function calls
+ * so it can be safely serialized and injected via chrome.scripting.executeScript.
  */
 export function harvestIsolatedSignals(): IsolatedProbePayload {
-  const url = window.location.href;
+  const url = typeof window !== 'undefined' ? window.location.href : '';
+
+  /**
+   * Known structural DOM selectors to probe without parsing full page body.
+   * Declared strictly inside function body to ensure self-contained serialization.
+   */
+  const PROBE_SELECTORS = [
+    '#__next',
+    'script#__NEXT_DATA__',
+    'meta[name="next-head-count"]',
+    'link[href*="/_next/static/"]',
+    '[data-reactroot]',
+    '[data-reactid]',
+    '[data-react-checksum]',
+    '[ng-version]',
+    'app-root',
+    '[ng-app]',
+    '[data-v-app]',
+    'body.woocommerce',
+    'body.woocommerce-page',
+    '.woocommerce',
+    'html[data-wf-page]',
+    'html[data-wf-site]',
+    'link[href*="cdn.shopify.com"]',
+    'link[rel*="https://api.w.org/"]',
+    'link[rel="EditURI"][type="application/rsd+xml"]',
+    'link[href*="bootstrap"]',
+    'input[name="shopify-digital-wallet"]',
+    'iframe[src*="js.stripe.com"]',
+    'script[src*="js.stripe.com"]',
+    'iframe[src*="checkout.razorpay.com"]',
+    'iframe[src*="googletagmanager.com/ns.html"]',
+    'script[src*="jquery"]',
+  ];
 
   // 1. Harvest Meta Tags
   const meta: HarvestedMeta[] = [];
