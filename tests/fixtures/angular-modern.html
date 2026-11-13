@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Modern Angular Application</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/main.js"></script>
+</head>
+<body>
+  <adev-root ng-version="22.2.6+sha-22b7937" ng-server-context="ssr">
+    <h1>Angular 22 Application</h1>
+  </adev-root>
+  <script>
+    window.ng = {};
+    window.getAllAngularRootElements = function() { return [document.querySelector('adev-root')]; };
+  </script>
+</body>
+</html>

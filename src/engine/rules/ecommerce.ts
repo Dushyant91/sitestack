@@ -26,7 +26,6 @@ export const ecommerceRules: TechRule[] = [
         { urlRegex: /monorail-edge\.shopifysvc\.com/i, weight: 30 },
       ],
       dom: [
-        { selector: 'link[href*="cdn.shopify.com"]', weight: 30 },
         { selector: 'input[name="shopify-digital-wallet"]', weight: 35 },
       ],
     },

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Modern Next.js App Router</title>
+  <meta name="next-head-count" content="5">
+  <link rel="stylesheet" href="/_next/static/css/app-layout.css">
+  <link rel="preload" href="/_next/static/chunks/main-app.js" as="script">
+</head>
+<body>
+  <!-- Next.js App Router mounts directly to body, no #__next container -->
+  <main>
+    <h1>Next.js 14 App Router</h1>
+  </main>
+  <script src="/_next/static/chunks/main-app.js"></script>
+  <script src="/_next/static/chunks/turbopack.js"></script>
+  <script>
+    // App Router React Server Components streaming flight chunks
+    self.__next_f = [
+      [1, "payload-chunk-1"],
+      [2, "payload-chunk-2"]
+    ];
+  </script>
+</body>
+</html>

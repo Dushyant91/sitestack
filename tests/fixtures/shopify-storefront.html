@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Genuine Shopify Storefront</title>
+  <link rel="stylesheet" href="https://cdn.shopify.com/s/files/1/0000/0001/t/1/assets/theme.css">
+  <script src="https://cdn.shopify.com/s/files/1/0000/0001/t/1/assets/storefront.js"></script>
+</head>
+<body>
+  <form action="/cart/add" method="post">
+    <input type="hidden" name="shopify-digital-wallet" value="true">
+    <button type="submit">Buy with Shop Pay</button>
+  </form>
+  <script>
+    window.Shopify = {
+      shop: 'mystore.myshopify.com',
+      theme: { name: 'Dawn', version: '12.0.0' }
+    };
+    window.ShopifyAnalytics = {};
+  </script>
+</body>
+</html>

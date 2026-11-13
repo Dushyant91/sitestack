@@ -90,7 +90,9 @@ export const frameworkRules: TechRule[] = [
       dom: [
         { selector: '[ng-version]', weight: 55 },
         { selector: 'app-root', weight: 35 },
+        { selector: 'adev-root', weight: 35 },
         { selector: '[ng-app]', weight: 40 },
+        { selector: '[ng-server-context]', weight: 35 },
       ],
       resources: [
         { urlRegex: /@angular\/core/i, weight: 40 },
@@ -100,7 +102,7 @@ export const frameworkRules: TechRule[] = [
       fromDom: {
         selector: '[ng-version]',
         attribute: 'ng-version',
-        regex: /([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)/,
+        regex: /([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)/,
       },
     },
   },

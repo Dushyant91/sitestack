@@ -36,7 +36,7 @@ export const analyticsRules: TechRule[] = [
     signals: {
       globals: [
         { path: 'google_tag_manager', weight: 60 },
-        { path: 'dataLayer', weight: 50 },
+        { path: 'dataLayer', weight: 25 }, // Supporting signal: gtag also uses dataLayer, so dataLayer alone must not trigger GTM
       ],
       resources: [
         { urlRegex: /googletagmanager\.com\/gtm\.js/i, weight: 45 },
