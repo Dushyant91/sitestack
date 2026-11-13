@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
+    "./popup/**/*.html",
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
@@ -11,7 +12,7 @@ export default {
         surface: {
           DEFAULT: '#0d0e15',
           card: '#12131c',
-          muted: '#181926'
+          muted: '#181926',
         },
         brand: {
           50: '#eef2ff',

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    * { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-transparent text-zinc-100 antialiased p-2">
+  <!-- Extension Popup Container -->
+  <div class="max-w-[390px] mx-auto bg-[#0d0e15] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col text-xs">
+    
+    <!-- Top Header -->
+    <div class="px-3 py-2.5 bg-white/[0.02] border-b border-white/10 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-indigo-600/30">
+          ⚡
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-white text-xs">SiteStack</span>
+            <span class="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 font-mono">v1.0</span>
+          </div>
+          <div class="text-[11px] text-zinc-400 font-mono truncate max-w-[170px]" id="tab-domain">vercel.com</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="simulateScan()" class="px-2 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors flex items-center gap-1 text-[11px]">
+          <span>⟳</span>
+          <span id="scan-btn-text">Rescan</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="px-3 py-1.5 bg-black/30 border-b border-white/5 flex items-center justify-between text-[11px]">
+      <div class="flex items-center gap-1.5">
+        <span class="text-zinc-400">Stack:</span>
+        <span class="font-bold text-indigo-300 bg-indigo-500/20 px-1.5 py-0.2 rounded font-mono" id="tech-tally">6 Techs</span>
+      </div>
+      <div class="flex items-center gap-2 text-[10px] font-mono">
+        <span class="text-emerald-400 font-medium">● 4 High</span>
+        <span class="text-amber-400 font-medium">● 2 Med</span>
+      </div>
+    </div>
+
+    <!-- Category Filter Pills -->
+    <div class="p-2 pb-1 flex items-center gap-1 overflow-x-auto text-[10px] scrollbar-none border-b border-white/5">
+      <button onclick="filterCat('all')" id="pill-all" class="px-2 py-0.8 rounded font-medium bg-indigo-600 text-white whitespace-nowrap">All (6)</button>
+      <button onclick="filterCat('framework')" id="pill-framework" class="px-2 py-0.8 rounded font-medium bg-zinc-800/80 text-zinc-400 hover:text-zinc-200 whitespace-nowrap">Frameworks (3)</button>
+      <button onclick="filterCat('analytics')" id="pill-analytics" class="px-2 py-0.8 rounded font-medium bg-zinc-800/80 text-zinc-400 hover:text-zinc-200 whitespace-nowrap">Analytics (1)</button>
+      <button onclick="filterCat('infrastructure')" id="pill-infrastructure" class="px-2 py-0.8 rounded font-medium bg-zinc-800/80 text-zinc-400 hover:text-zinc-200 whitespace-nowrap">Cloud (2)</button>
+    </div>
+
+    <!-- Scanning Overlay Banner -->
+    <div id="scan-indicator" class="hidden px-3 py-2 bg-indigo-950/60 border-b border-indigo-500/30 flex items-center justify-between text-[11px] text-indigo-300">
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+        <span>Probing browser DOM & globals...</span>
+      </div>
+      <span class="font-mono text-[10px]">~45ms</span>
+    </div>
+
+    <!-- Tech Items List (Height restricted to prevent overflow) -->
+    <div class="p-2 space-y-1.5 max-h-[260px] overflow-y-auto" id="tech-container">
+      
+      <!-- Tech Item 1: Next.js -->
+      <div class="tech-row rounded-lg p-2 bg-white/[0.02] border border-white/[0.07] hover:border-zinc-700 transition-colors" data-cat="framework">
+        <div class="flex items-start justify-between cursor-pointer" onclick="toggleInspector('ev-next')">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded bg-black border border-zinc-800 flex items-center justify-center font-bold text-white text-[11px] font-mono">
+              N
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-white text-xs">Next.js</span>
+                <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-zinc-800 text-zinc-300">v14.2</span>
+              </div>
+              <div class="text-[10px] text-zinc-400">React Framework · Hybrid SSR</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">98% High</span>
+            <span id="arr-ev-next" class="text-zinc-500 text-[10px]">▾</span>
+          </div>
+        </div>
+        <!-- Evidence Drawer -->
+        <div id="ev-next" class="hidden mt-2 pt-1.5 border-t border-zinc-800 text-[10px] font-mono space-y-1 bg-zinc-950/50 p-1.5 rounded">
+          <div class="text-zinc-400 font-semibold flex justify-between">
+            <span>EVIDENCE CHAIN</span>
+            <span class="text-indigo-400">Score: 98/100</span>
+          </div>
+          <div class="text-emerald-400 flex items-center justify-between">
+            <span>✓ window.__NEXT_DATA__</span>
+            <span class="text-zinc-500">+60</span>
+          </div>
+          <div class="text-emerald-400 flex items-center justify-between">
+            <span>✓ &lt;script id="__NEXT_DATA__"&gt;</span>
+            <span class="text-zinc-500">+25</span>
+          </div>
+          <div class="text-emerald-400 flex items-center justify-between">
+            <span>✓ /_next/static/chunks/</span>
+            <span class="text-zinc-500">+20</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tech Item 2: React -->
+      <div class="tech-row rounded-lg p-2 bg-white/[0.02] border border-white/[0.07] hover:border-zinc-700 transition-colors" data-cat="framework">
+        <div class="flex items-start justify-between cursor-pointer" onclick="toggleInspector('ev-react')">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded bg-[#00d8ff]/10 border border-[#00d8ff]/30 flex items-center justify-center font-bold text-[#00d8ff] text-[11px] font-mono">
+              ⚛
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-white text-xs">React</span>
+                <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-zinc-800 text-zinc-300">v18.3</span>
+              </div>
+              <div class="text-[10px] text-zinc-400">UI Component Library</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">95% High</span>
+            <span id="arr-ev-react" class="text-zinc-500 text-[10px]">▾</span>
+          </div>
+        </div>
+        <div id="ev-react" class="hidden mt-2 pt-1.5 border-t border-zinc-800 text-[10px] font-mono space-y-1 bg-zinc-950/50 p-1.5 rounded">
+          <div class="text-zinc-400 font-semibold flex justify-between">
+            <span>EVIDENCE CHAIN</span>
+            <span class="text-indigo-400">Score: 95/100</span>
+          </div>
+          <div class="text-emerald-400 flex items-center justify-between">
+            <span>✓ __reactFiber$ DOM property</span>
+            <span class="text-zinc-500">+55</span>
+          </div>
+          <div class="text-emerald-400 flex items-center justify-between">
+            <span>✓ [data-reactroot] DOM attribute</span>
+            <span class="text-zinc-500">+40</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tech Item 3: Vercel -->
+      <div class="tech-row rounded-lg p-2 bg-white/[0.02] border border-white/[0.07] hover:border-zinc-700 transition-colors" data-cat="infrastructure">
+        <div class="flex items-start justify-between cursor-pointer" onclick="toggleInspector('ev-vercel')">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded bg-zinc-900 border border-zinc-700 flex items-center justify-center font-bold text-white text-[11px] font-mono">
+              ▲
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-white text-xs">Vercel</span>
+              </div>
+              <div class="text-[10px] text-zinc-400">Frontend Edge Cloud</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">90% High</span>
+            <span id="arr-ev-vercel" class="text-zinc-500 text-[10px]">▾</span>
+          </div>
+        </div>
+        <div id="ev-vercel" class="hidden mt-2 pt-1.5 border-t border-zinc-800 text-[10px] font-mono space-y-1 bg-zinc-950/50 p-1.5 rounded">
+          <div class="text-zinc-400 font-semibold flex justify-between">
+            <span>EVIDENCE CHAIN</span>
+            <span class="text-indigo-400">Score: 90/100</span>
+          </div>
+          <div class="text-emerald-400 flex items-center justify-between">
+            <span>✓ x-vercel-id / edge routing</span>
+            <span class="text-zinc-500">+60</span>
+          </div>
+          <div class="text-emerald-400 flex items-center justify-between">
+            <span>✓ /_vercel/insights/script.js</span>
+            <span class="text-zinc-500">+30</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tech Item 4: Cloudflare (Medium Confidence) -->
+      <div class="tech-row rounded-lg p-2 bg-white/[0.02] border border-white/[0.07] hover:border-zinc-700 transition-colors" data-cat="infrastructure">
+        <div class="flex items-start justify-between cursor-pointer" onclick="toggleInspector('ev-cf')">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded bg-orange-500/10 border border-orange-500/30 flex items-center justify-center font-bold text-orange-400 text-[11px] font-mono">
+              CF
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-white text-xs">Cloudflare</span>
+              </div>
+              <div class="text-[10px] text-zinc-400">Edge CDN & Reverse Proxy</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">72% Med</span>
+            <span id="arr-ev-cf" class="text-zinc-500 text-[10px]">▾</span>
+          </div>
+        </div>
+        <div id="ev-cf" class="hidden mt-2 pt-1.5 border-t border-zinc-800 text-[10px] font-mono space-y-1 bg-zinc-950/50 p-1.5 rounded">
+          <div class="text-zinc-400 font-semibold flex justify-between">
+            <span>EVIDENCE CHAIN</span>
+            <span class="text-amber-400">Score: 72/100</span>
+          </div>
+          <div class="text-amber-400 flex items-center justify-between">
+            <span>✓ cdnjs / cloudflareinsights URL</span>
+            <span class="text-zinc-500">+72</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Action Bar -->
+    <div class="px-3 py-2 bg-black/40 border-t border-white/10 flex items-center justify-between text-[11px]">
+      <span class="text-zinc-500 font-mono text-[10px]">SiteStack v1.0 Core</span>
+      <div class="flex items-center gap-1.5">
+        <button onclick="alert('Exported JSON scan data!')" class="px-2 py-0.8 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-medium transition-colors">JSON</button>
+        <button onclick="alert('Exported CSV summary!')" class="px-2 py-0.8 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-medium transition-colors">CSV</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function toggleInspector(id) {
+      const el = document.getElementById(id);
+      const arr = document.getElementById('arr-' + id);
+      if (el) {
+        const isHidden = el.classList.contains('hidden');
+        if (isHidden) {
+          el.classList.remove('hidden');
+          if (arr) arr.innerText = '▴';
+        } else {
+          el.classList.add('hidden');
+          if (arr) arr.innerText = '▾';
+        }
+      }
+    }
+
+    function filterCat(category) {
+      const pills = ['all', 'framework', 'analytics', 'infrastructure'];
+      pills.forEach(p => {
+        const btn = document.getElementById('pill-' + p);
+        if (btn) {
+          if (p === category) {
+            btn.className = 'px-2 py-0.8 rounded font-medium bg-indigo-600 text-white whitespace-nowrap';
+          } else {
+            btn.className = 'px-2 py-0.8 rounded font-medium bg-zinc-800/80 text-zinc-400 hover:text-zinc-200 whitespace-nowrap';
+          }
+        }
+      });
+
+      const rows = document.querySelectorAll('.tech-row');
+      rows.forEach(r => {
+        if (category === 'all' || r.getAttribute('data-cat') === category) {
+          r.style.display = 'block';
+        } else {
+          r.style.display = 'none';
+        }
+      });
+    }
+
+    function simulateScan() {
+      const ind = document.getElementById('scan-indicator');
+      const btn = document.getElementById('scan-btn-text');
+      ind.classList.remove('hidden');
+      btn.innerText = 'Scanning...';
+      setTimeout(() => {
+        ind.classList.add('hidden');
+        btn.innerText = 'Rescan';
+      }, 700);
+    }
+  </script>
+</body>
+</html>
