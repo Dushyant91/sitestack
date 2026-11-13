@@ -115,6 +115,7 @@ export interface DetectedTechnology {
 }
 
 export interface ScanResult {
+  id?: string; // Optional unique identifier (e.g. domain_timestamp)
   url: string;
   domain: string;
   timestamp: number;

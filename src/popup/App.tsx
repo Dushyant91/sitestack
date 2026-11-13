@@ -104,9 +104,27 @@ export const App: React.FC = () => {
         isCached={isCached && !historyOverrideScan}
         timestamp={activeScan?.timestamp}
         isLoading={isLoading}
+        isHistoryMode={Boolean(historyOverrideScan)}
+        onExitHistoryMode={() => setHistoryOverrideScan(null)}
         onRescan={handleRescan}
         onOpenHistory={() => setIsHistoryOpen(true)}
       />
+
+      {/* Historical Report Banner */}
+      {historyOverrideScan && (
+        <div className="px-3 py-1.5 bg-violet-950/40 border-b border-violet-500/20 flex items-center justify-between text-[10px] text-violet-300 font-mono shrink-0">
+          <span className="flex items-center gap-1.5 truncate">
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
+            Viewing saved report ({historyOverrideScan.domain})
+          </span>
+          <button
+            onClick={() => setHistoryOverrideScan(null)}
+            className="text-violet-400 hover:text-white underline ml-2 shrink-0 transition-colors"
+          >
+            Back to Active Tab
+          </button>
+        </div>
+      )}
 
       {/* Main View Area */}
       {isLoading ? (

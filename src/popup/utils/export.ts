@@ -1,6 +1,7 @@
 import { ScanResult } from '../../engine/types';
 
 function triggerDownload(blob: Blob, filename: string): void {
+  if (typeof document === 'undefined') return;
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -9,6 +10,12 @@ function triggerDownload(blob: Blob, filename: string): void {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export function escapeCsv(str: string | number | undefined | null): string {
+  if (str === undefined || str === null) return '""';
+  const escaped = String(str).replace(/"/g, '""');
+  return `"${escaped}"`;
 }
 
 export interface ExportRecordJson {
@@ -37,6 +44,15 @@ export interface StandardExportPayload {
   technologies: ExportRecordJson[];
 }
 
+export interface MultiScanExportPayload {
+  exportedAt: string;
+  totalScans: number;
+  scans: StandardExportPayload[];
+}
+
+/**
+ * Formats a single scan result into standard structured JSON payload
+ */
 export function formatExportJson(scanResult: ScanResult): StandardExportPayload {
   return {
     url: scanResult.url,
@@ -63,6 +79,9 @@ export function formatExportJson(scanResult: ScanResult): StandardExportPayload 
   };
 }
 
+/**
+ * Downloads a single scan result as structured JSON
+ */
 export function exportToJson(scanResult: ScanResult): void {
   const structuredData = formatExportJson(scanResult);
   const jsonContent = JSON.stringify(structuredData, null, 2);
@@ -72,7 +91,10 @@ export function exportToJson(scanResult: ScanResult): void {
   triggerDownload(blob, `sitestack-${domainClean}-${dateStr}.json`);
 }
 
-export function exportToCsv(scanResult: ScanResult): void {
+/**
+ * Formats a single scan result into a standard CSV string
+ */
+export function formatExportCsv(scanResult: ScanResult): string {
   const headers = [
     'technology',
     'category',
@@ -85,12 +107,6 @@ export function exportToCsv(scanResult: ScanResult): void {
     'evidenceSummary',
     'website',
   ];
-
-  const escapeCsv = (str: string | number | undefined | null): string => {
-    if (str === undefined || str === null) return '""';
-    const escaped = String(str).replace(/"/g, '""');
-    return `"${escaped}"`;
-  };
 
   const rows = scanResult.technologies.map((t) => {
     const evidenceSummary = t.evidence.map((e) => `${e.source} (${e.weight}pts)`).join('; ');
@@ -108,9 +124,97 @@ export function exportToCsv(scanResult: ScanResult): void {
     ].join(',');
   });
 
-  const csvContent = [headers.join(','), ...rows].join('\r\n');
+  return [headers.join(','), ...rows].join('\r\n');
+}
+
+/**
+ * Downloads a single scan result as clean CSV spreadsheet
+ */
+export function exportToCsv(scanResult: ScanResult): void {
+  const csvContent = formatExportCsv(scanResult);
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const domainClean = scanResult.domain.replace(/[^a-zA-Z0-9.-]/g, '_');
   const dateStr = new Date(scanResult.timestamp).toISOString().slice(0, 10);
   triggerDownload(blob, `sitestack-${domainClean}-${dateStr}.csv`);
+}
+
+/**
+ * Formats multiple historical scan results into combined multi-scan JSON payload
+ */
+export function formatMultiScanExportJson(scanResults: ScanResult[]): MultiScanExportPayload {
+  return {
+    exportedAt: new Date().toISOString(),
+    totalScans: scanResults.length,
+    scans: scanResults.map((s) => formatExportJson(s)),
+  };
+}
+
+/**
+ * Downloads multiple selected historical scans as combined JSON
+ */
+export function exportMultiScanToJson(scanResults: ScanResult[], customFilename?: string): void {
+  const structuredData = formatMultiScanExportJson(scanResults);
+  const jsonContent = JSON.stringify(structuredData, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/json' });
+  const dateStr = new Date().toISOString().slice(0, 10);
+  triggerDownload(blob, customFilename || `sitestack-history-export-${dateStr}.json`);
+}
+
+/**
+ * Formats multiple historical scan results into a combined multi-scan CSV string
+ * Includes website domain, scan date, and URL as leading columns for easy spreadsheet filtering
+ */
+export function formatMultiScanExportCsv(scanResults: ScanResult[]): string {
+  const headers = [
+    'domain',
+    'scanDate',
+    'url',
+    'technology',
+    'category',
+    'version',
+    'confidenceScore',
+    'confidenceTier',
+    'detectionType',
+    'parentDependency',
+    'confidenceReason',
+    'evidenceSummary',
+    'website',
+  ];
+
+  const rows: string[] = [];
+  for (const scan of scanResults) {
+    const scanDate = new Date(scan.timestamp).toISOString();
+    for (const t of scan.technologies) {
+      const evidenceSummary = t.evidence.map((e) => `${e.source} (${e.weight}pts)`).join('; ');
+      rows.push(
+        [
+          escapeCsv(scan.domain),
+          escapeCsv(scanDate),
+          escapeCsv(scan.url),
+          escapeCsv(t.name),
+          escapeCsv(t.category),
+          escapeCsv(t.version || ''),
+          escapeCsv(t.confidenceScore),
+          escapeCsv(t.confidenceTier),
+          escapeCsv(t.detectionType),
+          escapeCsv(t.parentDependency || ''),
+          escapeCsv(t.confidenceReason || ''),
+          escapeCsv(evidenceSummary),
+          escapeCsv(t.website),
+        ].join(',')
+      );
+    }
+  }
+
+  return [headers.join(','), ...rows].join('\r\n');
+}
+
+/**
+ * Downloads multiple historical scans as combined multi-scan CSV spreadsheet
+ */
+export function exportMultiScanToCsv(scanResults: ScanResult[], customFilename?: string): void {
+  const csvContent = formatMultiScanExportCsv(scanResults);
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const dateStr = new Date().toISOString().slice(0, 10);
+  triggerDownload(blob, customFilename || `sitestack-history-export-${dateStr}.csv`);
 }
