@@ -45,8 +45,8 @@ export const frameworkRules: TechRule[] = [
       ],
       dom: [
         { selector: '[data-v-app]', weight: 50 },
-        { selector: '[data-v-scoped]', weight: 45 },
-        { selector: 'style:has-text([data-v-])', weight: 40 },
+        { selector: '[data-v-scoped]', weight: 35 },
+        { selector: 'style:has-text([data-v-])', weight: 30 },
       ],
       resources: [
         { urlRegex: /(?:^|\/|@)vue(?:\.runtime)?(?:\.global)?(?:\.esm-browser)?(?:\.prod|\.min)?\.js(?:\?|#|$)/i, weight: 35 },
@@ -73,6 +73,15 @@ export const frameworkRules: TechRule[] = [
         { path: '__VITEPRESS__', weight: 60 },
         { path: '__VP_HASH_MAP__', weight: 60 },
       ],
+      meta: [
+        { name: 'generator', contentRegex: /VitePress/i, weight: 60 },
+      ],
+    },
+    versionExtraction: {
+      fromMeta: {
+        name: 'generator',
+        regex: /VitePress\s+v?([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)/i,
+      },
     },
   },
   {

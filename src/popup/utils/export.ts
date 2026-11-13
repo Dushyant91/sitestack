@@ -19,6 +19,7 @@ export interface ExportRecordJson {
   confidenceTier: string;
   detectionType: 'direct' | 'inferred';
   parentDependency: string | null;
+  confidenceReason: string | null;
   evidenceSummary: Array<{
     type: string;
     source: string;
@@ -50,6 +51,7 @@ export function formatExportJson(scanResult: ScanResult): StandardExportPayload 
       confidenceTier: t.confidenceTier,
       detectionType: t.detectionType,
       parentDependency: t.parentDependency || null,
+      confidenceReason: t.confidenceReason || null,
       evidenceSummary: t.evidence.map((e) => ({
         type: e.type,
         source: e.source,
@@ -79,6 +81,7 @@ export function exportToCsv(scanResult: ScanResult): void {
     'confidenceTier',
     'detectionType',
     'parentDependency',
+    'confidenceReason',
     'evidenceSummary',
     'website',
   ];
@@ -99,6 +102,7 @@ export function exportToCsv(scanResult: ScanResult): void {
       escapeCsv(t.confidenceTier),
       escapeCsv(t.detectionType),
       escapeCsv(t.parentDependency || ''),
+      escapeCsv(t.confidenceReason || ''),
       escapeCsv(evidenceSummary),
       escapeCsv(t.website),
     ].join(',');

@@ -99,16 +99,34 @@ export function evaluateRule(
     }
   }
 
-  // 4. Evaluate Resources (Performance Timing / Script URLs)
+  // 4. Evaluate Resources (Performance Timing / Script URLs) with Origin Deduplication
   if (rule.signals.resources && Array.isArray(signals.resources)) {
+    const seenResourceOrigins = new Set<string>();
+
     for (const r of rule.signals.resources) {
       for (const url of signals.resources) {
         if (r.urlRegex.test(url)) {
+          // Extract origin + base path prefix for deduplication to prevent repeated URLs from the same bundle/CDN from stacking
+          let originKey = 'generic';
+          try {
+            const parsed = new URL(url.startsWith('http') ? url : `https://example.com${url.startsWith('/') ? '' : '/'}${url}`);
+            const basePath = parsed.pathname.split('/').slice(0, 3).join('/');
+            originKey = `${parsed.hostname}${basePath}`;
+          } catch {
+            originKey = url.slice(0, 30);
+          }
+
+          const isDuplicateOrigin = seenResourceOrigins.has(originKey);
+          seenResourceOrigins.add(originKey);
+
+          // Primary resource from an origin gets full weight; secondary matching URLs from same bundle root get supporting weight (max 5pts)
+          const effectiveWeight = isDuplicateOrigin ? Math.min(5, Math.round(r.weight * 0.15)) : r.weight;
+
           matchedEvidence.push({
             type: 'resource',
             source: url.length > 70 ? '...' + url.slice(-67) : url,
             matchedValue: url,
-            weight: r.weight,
+            weight: effectiveWeight,
           });
           matchedSignalTypes.add('resource');
           break; // Avoid multi-matching the same rule signal against 50 identical chunk urls
@@ -139,9 +157,9 @@ export function evaluateRule(
   }
 
   // Calculate Base Weight Sum with diminishing returns for correlated signals within the same class
-  // The highest signal in a class counts at 100%; subsequent signals in the same class count at 50%
-  // Any single signal class is capped at 65 points, ensuring High confidence (>=80) strictly requires
-  // independent cross-signal corroboration across at least 2 distinct signal types.
+  // The highest signal in a class counts at 100%; subsequent signals in the same class count at 40%
+  // Any single signal class is capped at 60 points, ensuring High confidence (>=80) strictly requires
+  // independent cross-signal corroboration across at least 2 distinct signal classes.
   const classWeights: Record<SignalType, number[]> = {
     global: [],
     meta: [],
@@ -156,13 +174,15 @@ export function evaluateRule(
   }
 
   let baseWeightSum = 0;
-  for (const [, weights] of Object.entries(classWeights)) {
+  for (const [cls, weights] of Object.entries(classWeights)) {
     if (weights.length === 0) continue;
     // Sort descending: primary signal first
     weights.sort((a, b) => b - a);
     const primary = weights[0];
-    const secondarySum = weights.slice(1).reduce((s, w) => s + w * 0.5, 0);
-    const classTotal = Math.min(65, Math.round(primary + secondarySum));
+    const secondarySum = weights.slice(1).reduce((s, w) => s + w * 0.4, 0);
+    // Resource class alone is capped at 50 to prevent network assets from reaching Medium without corroboration
+    const classCap = cls === 'resource' ? 50 : 60;
+    const classTotal = Math.min(classCap, Math.round(primary + secondarySum));
     baseWeightSum += classTotal;
   }
 
@@ -181,6 +201,20 @@ export function evaluateRule(
 
   // Version Extraction
   const version = extractVersion(rule.versionExtraction, signals);
+  const confidenceTier = getConfidenceTier(confidenceScore);
+  const distinctClasses = Array.from(matchedSignalTypes);
+
+  // Generate explainable justification
+  let confidenceReason = '';
+  if (confidenceTier === 'high') {
+    confidenceReason = `High confidence (Direct): Corroborated across ${distinctClasses.length} independent signal classes (${distinctClasses.join(', ')}). Reliable proof of active execution.`;
+  } else if (confidenceTier === 'medium') {
+    const primary = matchedEvidence[0]?.source || 'primary signal';
+    confidenceReason = `Medium confidence (Direct): Verified by ${primary}, but lacks multi-class corroboration to confirm full installation.`;
+  } else {
+    const primary = matchedEvidence[0]?.source || 'standalone asset';
+    confidenceReason = `Low confidence (Direct): Identified via standalone network asset (${primary}) without corroborating runtime globals or DOM elements.`;
+  }
 
   return {
     id: rule.id,
@@ -188,8 +222,9 @@ export function evaluateRule(
     category: rule.category,
     version,
     confidenceScore,
-    confidenceTier: getConfidenceTier(confidenceScore),
+    confidenceTier,
     detectionType: 'direct',
+    confidenceReason,
     isInferred: false,
     evidence: matchedEvidence,
     website: rule.website,
@@ -199,11 +234,11 @@ export function evaluateRule(
 }
 
 /**
- * Resolves implied technology dependencies (e.g. Next.js implies React)
+ * Resolves implied technology dependencies (e.g. Next.js implies React, VitePress implies Vue.js)
  * Inferred technologies are explicitly marked with detectionType: 'inferred', isInferred: true,
  * and parentDependency set to the parent technology.
- * An inferred technology strictly inherits or is bounded by the parent's confidence score,
- * and NEVER contains direct DOM or runtime evidence.
+ * An inferred technology does NOT inherit the parent's confidence score. It receives an
+ * independently calibrated confidence score reflecting architectural dependency without direct browser evidence.
  */
 export function resolveImpliedTechnologies(
   detectedMap: Map<string, DetectedTechnology>,
@@ -215,32 +250,72 @@ export function resolveImpliedTechnologies(
 
     for (const impliedId of rule.implies) {
       const existing = detectedMap.get(impliedId);
-      const parentRule = getRuleById(impliedId);
-      if (!parentRule) continue;
+      const impliedRule = getRuleById(impliedId);
+      if (!impliedRule) continue;
 
-      if (!existing) {
-        // An inferred dependency's score is derived directly from and bounded by the parent's score.
-        // It never exceeds the parent's score (e.g., if parent is 40 Low, inferred is 40 Low).
-        const impliedScore = detected.confidenceScore;
+      // Track dependency relationship on parent technology
+      if (!detected.dependentTechnologies) {
+        detected.dependentTechnologies = [];
+      }
+      if (!detected.dependentTechnologies.includes(impliedRule.name)) {
+        detected.dependentTechnologies.push(impliedRule.name);
+      }
+
+      // Check whether an existing detection has genuinely independent evidence
+      // (e.g. for Vue implied by VitePress: scoped CSS alone without window.Vue, window.__VUE__, [data-v-app] or runtime scripts is NOT independent)
+      const hasIndependentEvidence = existing && existing.evidence.some((ev) => {
+        if (impliedId === 'vue' && detected.id === 'vitepress') {
+          return (
+            ev.type === 'global' ||
+            ev.type === 'resource' ||
+            (ev.type === 'dom' && ev.source.includes('[data-v-app]'))
+          );
+        }
+        if (impliedId === 'react' && detected.id === 'nextjs') {
+          return ev.type === 'global' || (ev.type === 'dom' && ev.source.includes('[data-reactroot]'));
+        }
+        return ev.type !== 'inferred';
+      });
+
+      if (!existing || !hasIndependentEvidence) {
+        // Independent confidence calibration for inferred technologies:
+        // An inferred dependency does NOT inherit the parent's confidence score.
+        // It is separately calibrated:
+        // - Parent High (>= 80) -> Inferred calibrated to 75 (Medium, Inferred)
+        // - Parent Medium (50-79) -> Inferred calibrated to 50 (Medium, Inferred)
+        // - Parent Low (30-49) -> Inferred calibrated to 30 (Low, Inferred)
+        let impliedScore: number;
+        if (detected.confidenceScore >= SCORE_HIGH_THRESHOLD) {
+          impliedScore = 75; // Known foundation of high-confidence parent, but lacks direct browser runtime proof
+        } else if (detected.confidenceScore >= SCORE_MEDIUM_THRESHOLD) {
+          impliedScore = 50;
+        } else {
+          impliedScore = 30;
+        }
+
+        const tier = getConfidenceTier(impliedScore);
+        const reason = `Architectural dependency: Inferred with ${tier} confidence (${impliedScore} pts) because ${detected.name} is built upon ${impliedRule.name}. No direct browser runtime globals were exposed.`;
+
         detectedMap.set(impliedId, {
-          id: parentRule.id,
-          name: parentRule.name,
-          category: parentRule.category,
+          id: impliedRule.id,
+          name: impliedRule.name,
+          category: impliedRule.category,
           confidenceScore: impliedScore,
-          confidenceTier: detected.confidenceTier,
+          confidenceTier: tier,
           detectionType: 'inferred',
           parentDependency: detected.name,
+          confidenceReason: reason,
           isInferred: true,
           evidence: [
             {
               type: 'inferred',
-              source: `Architectural dependency of ${detected.name} (${detected.name} is built upon ${parentRule.name})`,
+              source: `Architectural dependency of ${detected.name} (${detected.name} requires ${impliedRule.name})`,
               weight: impliedScore,
             },
           ],
-          website: parentRule.website,
-          icon: parentRule.icon,
-          description: parentRule.description,
+          website: impliedRule.website,
+          icon: impliedRule.icon,
+          description: impliedRule.description,
         });
       }
     }

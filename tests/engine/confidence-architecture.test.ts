@@ -183,8 +183,8 @@ describe('Detection Confidence Architecture & Inference Integrity', () => {
     expect(react?.isInferred).toBe(true);
     expect(react?.parentDependency).toBe('Next.js');
 
-    // CRITICAL: React must NOT be promoted to Medium (60) when Next.js is Low (35)
-    expect(react?.confidenceScore).toBe(35);
+    // CRITICAL: Inferred React is independently calibrated to Low (30) when Next.js is Low (35)
+    expect(react?.confidenceScore).toBe(30);
     expect(react?.confidenceTier).toBe('low');
   });
 

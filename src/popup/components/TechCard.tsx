@@ -52,6 +52,12 @@ export const TechCard: React.FC<TechCardProps> = ({
                   Inferred
                 </span>
               )}
+
+              {technology.dependentTechnologies && technology.dependentTechnologies.length > 0 && (
+                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-medium bg-zinc-800/80 text-violet-300 border border-violet-500/20 shrink-0">
+                  Powers {technology.dependentTechnologies.join(', ')}
+                </span>
+              )}
             </div>
 
             <p className="text-[10px] text-zinc-400 truncate mt-0.5 max-w-[210px]">
@@ -89,6 +95,8 @@ export const TechCard: React.FC<TechCardProps> = ({
           confidenceScore={technology.confidenceScore}
           isInferred={technology.isInferred}
           parentDependency={technology.parentDependency}
+          dependentTechnologies={technology.dependentTechnologies}
+          confidenceReason={technology.confidenceReason}
           website={technology.website}
         />
       )}

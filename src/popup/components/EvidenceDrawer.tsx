@@ -7,6 +7,8 @@ interface EvidenceDrawerProps {
   confidenceScore: number;
   isInferred?: boolean;
   parentDependency?: string;
+  dependentTechnologies?: string[];
+  confidenceReason?: string;
   website: string;
 }
 
@@ -24,6 +26,8 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
   confidenceScore,
   isInferred,
   parentDependency,
+  dependentTechnologies,
+  confidenceReason,
   website,
 }) => {
   if (isInferred) {
@@ -35,7 +39,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
             Architectural Dependency
           </span>
           <span className="text-violet-400 font-bold">
-            Inherited ({confidenceScore}%)
+            Calibrated ({confidenceScore}%)
           </span>
         </div>
 
@@ -43,9 +47,15 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
           <div className="text-white font-medium flex items-center gap-1.5">
             <span>Inferred from {parentDependency || 'Parent Framework'}</span>
           </div>
-          <p className="text-zinc-400 text-[10px]">
-            This technology was inferred through its architectural relationship with <strong className="text-zinc-200">{parentDependency || 'detected framework'}</strong>. No direct browser signals (such as unminified window globals) were directly exposed in the client runtime.
-          </p>
+          {confidenceReason ? (
+            <p className="text-zinc-300 text-[10px] leading-relaxed">
+              {confidenceReason}
+            </p>
+          ) : (
+            <p className="text-zinc-400 text-[10px]">
+              This technology was inferred through its architectural relationship with <strong className="text-zinc-200">{parentDependency || 'detected framework'}</strong>. No direct browser signals were directly exposed in the client runtime.
+            </p>
+          )}
         </div>
 
         {website && (
@@ -77,6 +87,20 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
           Score: {confidenceScore}/100
         </span>
       </div>
+
+      {confidenceReason && (
+        <div className="p-2 rounded bg-indigo-950/20 border border-indigo-500/25 text-[10px] text-zinc-300 font-sans leading-relaxed">
+          <span className="text-indigo-300 font-semibold block mb-0.5">Detection Analysis:</span>
+          {confidenceReason}
+        </div>
+      )}
+
+      {dependentTechnologies && dependentTechnologies.length > 0 && (
+        <div className="p-1.5 rounded bg-violet-950/25 border border-violet-500/30 text-[10px] text-violet-300 font-sans flex items-center gap-1.5">
+          <GitFork className="w-3 h-3 shrink-0 text-violet-400" />
+          <span>Architecturally powers inferred: <strong className="text-white">{dependentTechnologies.join(', ')}</strong></span>
+        </div>
+      )}
 
       <div className="space-y-1.5">
         {evidence.map((ev, idx) => {

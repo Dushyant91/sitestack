@@ -245,14 +245,22 @@ describe('15 Local HTML Fixture Validation Suite', () => {
   });
 
   // Fixture 9: Vue 3 VitePress
-  it('Fixture 9 (vue3-vitepress.html): Detects VitePress and Vue 3 via scoped CSS attributes and chunk map', () => {
+  it('Fixture 9 (vue3-vitepress.html): Detects VitePress directly and Vue 3 as inferred dependency', () => {
     const result = runFixtureScan('vue3-vitepress.html');
     const vp = result.technologies.find((t) => t.id === 'vitepress');
     const vue = result.technologies.find((t) => t.id === 'vue');
 
     expect(vp).toBeDefined();
+    expect(vp?.detectionType).toBe('direct');
+    expect(vp?.version).toBe('2.0.0-alpha.17');
+    expect(vp?.confidenceTier).toBe('high');
+
     expect(vue).toBeDefined();
     expect(vue?.category).toBe('framework');
+    expect(vue?.detectionType).toBe('inferred');
+    expect(vue?.parentDependency).toBe('VitePress');
+    expect(vue?.confidenceTier).toBe('medium');
+    expect(vue?.confidenceScore).toBe(75);
   });
 
   // Fixture 10: Angular Modern

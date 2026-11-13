@@ -127,14 +127,16 @@ describe('Real-World Detection Audit & Regression Test Suite', () => {
     const nextjs = result.technologies.find((t) => t.id === 'nextjs');
     const react = result.technologies.find((t) => t.id === 'react');
 
+    expect(nextjs).toBeDefined();
+    expect(nextjs?.confidenceTier).toBe('high');
     expect(react).toBeDefined();
     expect(react?.category).toBe('library');
     expect(react?.detectionType).toBe('inferred');
     expect(react?.isInferred).toBe(true);
     expect(react?.parentDependency).toBe('Next.js');
-    // Bounded by parent confidence
-    expect(react?.confidenceScore).toBe(nextjs?.confidenceScore);
-    expect(react?.confidenceTier).toBe(nextjs?.confidenceTier);
+    // Independently calibrated confidence: Parent High (>=80) -> Inferred Medium (75)
+    expect(react?.confidenceScore).toBe(75);
+    expect(react?.confidenceTier).toBe('medium');
     // Inferred technology contains only inferred architectural evidence
     expect(react?.evidence.length).toBe(1);
     expect(react?.evidence[0].type).toBe('inferred');
@@ -261,7 +263,9 @@ describe('Real-World Detection Audit & Regression Test Suite', () => {
         __VITEPRESS__: true,
         __VP_HASH_MAP__: { 'index.md': 'hash123' },
       },
-      meta: [],
+      meta: [
+        { name: 'generator', content: 'VitePress v2.0.0-alpha.17' },
+      ],
       dom: [
         { selector: '[data-v-scoped]' },
       ],
@@ -274,8 +278,13 @@ describe('Real-World Detection Audit & Regression Test Suite', () => {
 
     expect(vp).toBeDefined();
     expect(vp?.category).toBe('framework');
+    expect(vp?.detectionType).toBe('direct');
+    expect(vp?.version).toBe('2.0.0-alpha.17');
     expect(vueB).toBeDefined();
     expect(vueB?.category).toBe('framework');
+    expect(vueB?.detectionType).toBe('inferred');
+    expect(vueB?.parentDependency).toBe('VitePress');
+    expect(vueB?.confidenceScore).toBe(75);
   });
 
   // 11. Empty detection results
@@ -382,6 +391,7 @@ describe('Real-World Detection Audit & Regression Test Suite', () => {
       'confidenceTier',
       'detectionType',
       'parentDependency',
+      'confidenceReason',
       'evidenceSummary',
       'website',
     ];
