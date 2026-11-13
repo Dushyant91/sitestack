@@ -616,7 +616,7 @@ describe('Phase 7: Expanded Real-World Benchmark & False-Positive Audit Suite', 
         globals: { bootstrap: {} },
         dom: [{ selector: 'link[href*="bootstrap"]' }],
         meta: [],
-        resources: ['https://cdn.jsdelivr.net/npm/bootstrap/5.2.3/dist/js/bootstrap.bundle.min.js'],
+        resources: ['https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js'],
       };
       const result = evaluateSignals(signals);
       const bs = result.technologies.find((t) => t.id === 'bootstrap');

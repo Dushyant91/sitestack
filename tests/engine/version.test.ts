@@ -154,5 +154,89 @@ describe('Dedicated Version Extraction Engine', () => {
       };
       expect(extractVersion(extractor, signals)).toBeUndefined();
     });
+
+    describe('Bootstrap version extraction delimiters (Phase 8: / , - , and @)', () => {
+      const bootstrapExtractor: VersionExtractor = {
+        fromGlobal: 'bootstrap.Tooltip.VERSION',
+        fromResource: {
+          urlRegex: /bootstrap(?:[/-]|@)([\d.]+)/i,
+          captureGroup: 1,
+        },
+      };
+
+      it('should extract version using slash delimiter: bootstrap/5.2.3', () => {
+        const signals: HarvestedSignals = {
+          ...baseSignals,
+          resources: ['https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js'],
+        };
+        expect(extractVersion(bootstrapExtractor, signals)).toBe('5.2.3');
+      });
+
+      it('should extract version using hyphen delimiter: bootstrap-5.2.3', () => {
+        const signals: HarvestedSignals = {
+          ...baseSignals,
+          resources: ['https://example.com/assets/bootstrap-5.2.3.min.js'],
+        };
+        expect(extractVersion(bootstrapExtractor, signals)).toBe('5.2.3');
+      });
+
+      it('should extract version using at-sign delimiter: bootstrap@5.2.3', () => {
+        const signals: HarvestedSignals = {
+          ...baseSignals,
+          resources: ['https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js'],
+        };
+        expect(extractVersion(bootstrapExtractor, signals)).toBe('5.2.3');
+      });
+
+      it('should extract version from unpkg @ delimiter: bootstrap@4.6.2', () => {
+        const signals: HarvestedSignals = {
+          ...baseSignals,
+          resources: ['https://unpkg.com/bootstrap@4.6.2/dist/css/bootstrap.min.css'],
+        };
+        expect(extractVersion(bootstrapExtractor, signals)).toBe('4.6.2');
+      });
+
+      it('should extract version from global when both global and resource exist', () => {
+        const signals: HarvestedSignals = {
+          ...baseSignals,
+          globals: { bootstrap: { Tooltip: { VERSION: '5.3.3' } } },
+          resources: ['https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js'],
+        };
+        expect(extractVersion(bootstrapExtractor, signals)).toBe('5.3.3');
+      });
+
+      it('Negative: should return undefined for non-numeric version: bootstrap@latest', () => {
+        const signals: HarvestedSignals = {
+          ...baseSignals,
+          resources: ['https://cdn.jsdelivr.net/npm/bootstrap@latest/dist/js/bootstrap.bundle.min.js'],
+        };
+        expect(extractVersion(bootstrapExtractor, signals)).toBeUndefined();
+      });
+
+      it('Negative: should return undefined when no version delimiter exists: bootstrap.min.js', () => {
+        const signals: HarvestedSignals = {
+          ...baseSignals,
+          resources: ['https://example.com/assets/bootstrap.min.js'],
+        };
+        expect(extractVersion(bootstrapExtractor, signals)).toBeUndefined();
+      });
+
+      it('Negative: should return undefined for bootstrap-icons', () => {
+        const signals: HarvestedSignals = {
+          ...baseSignals,
+          resources: ['https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css'],
+        };
+        // urlRegex is /bootstrap(?:[/-]|@)([\d.]+)/i. For bootstrap-icons, following - is 'i', not digits.
+        expect(extractVersion(bootstrapExtractor, signals)).toBeUndefined();
+      });
+
+      it('Negative: should return undefined for unrelated library with @ delimiter', () => {
+        const signals: HarvestedSignals = {
+          ...baseSignals,
+          resources: ['https://cdn.jsdelivr.net/npm/other-library@5.2.3/dist/index.js'],
+        };
+        expect(extractVersion(bootstrapExtractor, signals)).toBeUndefined();
+      });
+    });
   });
 });
