@@ -9,15 +9,13 @@ export const infrastructureRules: TechRule[] = [
     icon: '/tech-icons/infrastructure/cloudflare.svg',
     description: 'Global cloud network providing CDN, DDoS protection, and edge compute.',
     signals: {
-      headers: [
-        { name: 'server', valueRegex: /cloudflare/i, weight: 50 },
-        { name: 'cf-ray', valueRegex: /.+/, weight: 50 },
-      ],
       globals: [
         { path: '__cfRLUnblockHandlers', weight: 50 },
+        { path: '_cf_chl_opt', weight: 50 },
       ],
       resources: [
         { urlRegex: /static\.cloudflareinsights\.com\/beacon(?:\.min)?\.js/i, weight: 45 },
+        { urlRegex: /challenges\.cloudflare\.com\/turnstile\//i, weight: 45 },
       ],
     },
   },
@@ -29,10 +27,6 @@ export const infrastructureRules: TechRule[] = [
     icon: '/tech-icons/infrastructure/vercel.svg',
     description: 'Frontend cloud platform powering edge deployments and serverless functions.',
     signals: {
-      headers: [
-        { name: 'x-vercel-id', valueRegex: /.+/, weight: 55 },
-        { name: 'server', valueRegex: /Vercel/i, weight: 50 },
-      ],
       resources: [
         { urlRegex: /\/_vercel\/insights\/script\.js/i, weight: 45 },
         { urlRegex: /\/_vercel\/speed-insights\/v1\/script\.js/i, weight: 45 },
@@ -47,12 +41,9 @@ export const infrastructureRules: TechRule[] = [
     icon: '/tech-icons/infrastructure/netlify.svg',
     description: 'Cloud hosting platform for composable web architectures and JAMstack sites.',
     signals: {
-      headers: [
-        { name: 'server', valueRegex: /Netlify/i, weight: 50 },
-        { name: 'x-nf-request-id', valueRegex: /.+/, weight: 50 },
-      ],
       resources: [
         { urlRegex: /identity\.netlify\.com\/v\d+\/netlify-identity-widget\.js/i, weight: 45 },
+        { urlRegex: /\/\.netlify\/functions\//i, weight: 45 },
       ],
     },
   },

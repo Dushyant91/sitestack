@@ -10,11 +10,11 @@ export const marketingRules: TechRule[] = [
     description: 'Conversion tracking and remarketing tool for Facebook & Instagram ads.',
     signals: {
       globals: [
-        { path: 'fbq', weight: 60 },
-        { path: '_fbq', weight: 55 },
+        { path: 'fbq', weight: 35 },
+        { path: '_fbq', weight: 35 },
       ],
       resources: [
-        { urlRegex: /connect\.facebook\.net\/(?:[a-zA-Z_]+)\/fbevents\.js/i, weight: 35 },
+        { urlRegex: /connect\.facebook\.net\/(?:[a-zA-Z_]+)\/fbevents\.js/i, weight: 30 },
       ],
     },
   },

@@ -18,6 +18,8 @@ describe('Detection Engine Evaluator', () => {
       resources: [
         'https://vercel.com/_next/static/chunks/main-app-123.js',
         'https://vercel.com/_next/static/chunks/framework-456.js',
+        'https://vercel.com/_vercel/insights/script.js',
+        'https://vercel.com/_vercel/speed-insights/v1/script.js',
       ],
       headers: {
         'x-vercel-id': 'iad1::xyz',
