@@ -62,11 +62,17 @@ export const TechCard: React.FC<TechCardProps> = ({
 
         {/* Confidence Tier Badge & Chevron Toggle */}
         <div className="flex items-center gap-1.5 shrink-0 ml-1">
-          <span
-            className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${tierBadgeStyle}`}
-          >
-            {technology.confidenceScore}% {technology.confidenceTier.toUpperCase()}
-          </span>
+          {technology.isInferred ? (
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-violet-500/15 text-violet-300 border-violet-500/30">
+              {technology.confidenceScore}% INFERRED
+            </span>
+          ) : (
+            <span
+              className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${tierBadgeStyle}`}
+            >
+              {technology.confidenceScore}% {technology.confidenceTier.toUpperCase()}
+            </span>
+          )}
 
           <ChevronDown
             className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${
@@ -82,6 +88,7 @@ export const TechCard: React.FC<TechCardProps> = ({
           evidence={technology.evidence}
           confidenceScore={technology.confidenceScore}
           isInferred={technology.isInferred}
+          parentDependency={technology.parentDependency}
           website={technology.website}
         />
       )}

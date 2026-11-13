@@ -120,10 +120,12 @@ describe('React UI Components (Phase 3)', () => {
     const mockInferredTech: DetectedTechnology = {
       id: 'react',
       name: 'React',
-      category: 'framework',
+      category: 'library',
       version: '18.3.1',
       confidenceScore: 85,
       confidenceTier: 'high',
+      detectionType: 'inferred',
+      parentDependency: 'Next.js',
       isInferred: true,
       evidence: [
         {
@@ -143,11 +145,10 @@ describe('React UI Components (Phase 3)', () => {
 
     expect(container.textContent).toContain('React');
     expect(container.textContent).toContain('v18.3.1');
-    expect(container.textContent).toContain('85% HIGH');
-    expect(container.textContent).toContain('Inferred');
+    expect(container.textContent).toContain('85% INFERRED');
 
     // Initially EvidenceDrawer is collapsed
-    expect(container.textContent).not.toContain('EVIDENCE CHAIN');
+    expect(container.textContent).not.toContain('Architectural Dependency');
 
     // Click to expand EvidenceDrawer
     const cardHeader = container.querySelector('.cursor-pointer') as HTMLElement;
@@ -155,10 +156,9 @@ describe('React UI Components (Phase 3)', () => {
       cardHeader.click();
     });
 
-    // EvidenceDrawer should now be visible
-    expect(container.textContent).toContain('Evidence Chain');
-    expect(container.textContent).toContain('Inferred dependency of Next.js');
-    expect(container.textContent).toContain('Architectural Inference');
+    // EvidenceDrawer should now be visible with explicit architectural dependency explanation
+    expect(container.textContent).toContain('Architectural Dependency');
+    expect(container.textContent).toContain('Inferred from Next.js');
     cleanup();
   });
 
@@ -185,6 +185,7 @@ describe('React UI Components (Phase 3)', () => {
           version: '14.2.3',
           confidenceScore: 98,
           confidenceTier: 'high',
+          detectionType: 'direct',
           isInferred: false,
           evidence: [{ type: 'global', source: 'window.__NEXT_DATA__', weight: 60 }],
           website: 'https://nextjs.org',

@@ -14,7 +14,7 @@ export const marketingRules: TechRule[] = [
         { path: '_fbq', weight: 55 },
       ],
       resources: [
-        { urlRegex: /connect\.facebook\.net\/(?:[a-zA-Z_]+)\/fbevents\.js/i, weight: 45 },
+        { urlRegex: /connect\.facebook\.net\/(?:[a-zA-Z_]+)\/fbevents\.js/i, weight: 35 },
       ],
     },
   },

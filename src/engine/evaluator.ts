@@ -164,6 +164,7 @@ export function evaluateRule(
     version,
     confidenceScore,
     confidenceTier: getConfidenceTier(confidenceScore),
+    detectionType: 'direct',
     isInferred: false,
     evidence: matchedEvidence,
     website: rule.website,
@@ -174,8 +175,10 @@ export function evaluateRule(
 
 /**
  * Resolves implied technology dependencies (e.g. Next.js implies React)
- * Inferred technologies are explicitly marked with isInferred: true and
- * evidence type: 'inferred' to ensure they are never misrepresented as directly confirmed.
+ * Inferred technologies are explicitly marked with detectionType: 'inferred', isInferred: true,
+ * and parentDependency set to the parent technology.
+ * An inferred technology strictly inherits or is bounded by the parent's confidence score,
+ * and NEVER contains direct DOM or runtime evidence.
  */
 export function resolveImpliedTechnologies(
   detectedMap: Map<string, DetectedTechnology>,
@@ -191,19 +194,22 @@ export function resolveImpliedTechnologies(
       if (!parentRule) continue;
 
       if (!existing) {
-        // Calibrate inferred confidence: lower than direct confirmation, capped at 85
-        const impliedScore = Math.min(85, Math.max(60, Math.round(detected.confidenceScore * 0.85)));
+        // An inferred dependency's score is derived directly from and bounded by the parent's score.
+        // It never exceeds the parent's score (e.g., if parent is 40 Low, inferred is 40 Low).
+        const impliedScore = detected.confidenceScore;
         detectedMap.set(impliedId, {
           id: parentRule.id,
           name: parentRule.name,
           category: parentRule.category,
           confidenceScore: impliedScore,
-          confidenceTier: getConfidenceTier(impliedScore),
+          confidenceTier: detected.confidenceTier,
+          detectionType: 'inferred',
+          parentDependency: detected.name,
           isInferred: true,
           evidence: [
             {
               type: 'inferred',
-              source: `Inferred dependency of ${detected.name} (architectural framework requirement)`,
+              source: `Architectural dependency of ${detected.name} (${detected.name} is built upon ${parentRule.name})`,
               weight: impliedScore,
             },
           ],

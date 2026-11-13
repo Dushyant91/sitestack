@@ -1,11 +1,12 @@
 import React from 'react';
 import { SignalEvidence, SignalType } from '../../engine/types';
-import { Info, ArrowUpRight } from 'lucide-react';
+import { Info, ArrowUpRight, GitFork } from 'lucide-react';
 
 interface EvidenceDrawerProps {
   evidence: SignalEvidence[];
   confidenceScore: number;
   isInferred?: boolean;
+  parentDependency?: string;
   website: string;
 }
 
@@ -22,25 +23,60 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
   evidence,
   confidenceScore,
   isInferred,
+  parentDependency,
   website,
 }) => {
+  if (isInferred) {
+    return (
+      <div className="mt-2.5 pt-2.5 border-t border-zinc-800/80 text-[11px] font-mono space-y-2.5 bg-violet-950/20 rounded-lg p-2.5 border border-violet-500/20">
+        <div className="flex items-center justify-between text-[10px] uppercase font-semibold tracking-wider text-violet-300">
+          <span className="flex items-center gap-1.5">
+            <GitFork className="w-3.5 h-3.5 text-violet-400" />
+            Architectural Dependency
+          </span>
+          <span className="text-violet-400 font-bold">
+            Inherited ({confidenceScore}%)
+          </span>
+        </div>
+
+        <div className="p-2 rounded bg-zinc-900/80 border border-violet-500/30 text-[11px] text-zinc-300 leading-relaxed font-sans space-y-1.5">
+          <div className="text-white font-medium flex items-center gap-1.5">
+            <span>Inferred from {parentDependency || 'Parent Framework'}</span>
+          </div>
+          <p className="text-zinc-400 text-[10px]">
+            This technology was inferred through its architectural relationship with <strong className="text-zinc-200">{parentDependency || 'detected framework'}</strong>. No direct browser signals (such as unminified window globals) were directly exposed in the client runtime.
+          </p>
+        </div>
+
+        {website && (
+          <div className="pt-1 flex items-center justify-between text-[10px] font-sans border-t border-violet-500/20">
+            <span className="text-zinc-500">Official Website</span>
+            <a
+              href={website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-violet-400 hover:text-violet-300 flex items-center gap-0.5 transition-colors"
+            >
+              <span>Visit documentation</span>
+              <ArrowUpRight className="w-2.5 h-2.5" />
+            </a>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="mt-2.5 pt-2.5 border-t border-zinc-800/80 text-[11px] font-mono space-y-2 bg-zinc-950/60 rounded-lg p-2.5 border border-zinc-800/50">
       <div className="flex items-center justify-between text-[10px] uppercase font-semibold tracking-wider text-zinc-400">
         <span className="flex items-center gap-1.5">
           <Info className="w-3 h-3 text-indigo-400" />
-          Evidence Chain ({evidence.length} {evidence.length === 1 ? 'Signal' : 'Signals'})
+          Direct Evidence Chain ({evidence.length} {evidence.length === 1 ? 'Signal' : 'Signals'})
         </span>
         <span className="text-indigo-400 font-bold">
           Score: {confidenceScore}/100
         </span>
       </div>
-
-      {isInferred && (
-        <div className="p-2 rounded bg-violet-950/30 border border-violet-500/20 text-[10px] text-violet-300 leading-relaxed font-sans">
-          <strong>Architectural Inference:</strong> This technology was not directly matched in the page DOM or globals, but is an architectural dependency of an explicitly detected framework on this site.
-        </div>
-      )}
 
       <div className="space-y-1.5">
         {evidence.map((ev, idx) => {

@@ -2,6 +2,36 @@ import { TechRule } from '../types';
 
 export const libraryRules: TechRule[] = [
   {
+    id: 'react',
+    name: 'React',
+    category: 'library',
+    website: 'https://react.dev',
+    icon: '/tech-icons/frameworks/react.svg',
+    description: 'Component-based declarative UI library developed by Meta.',
+    signals: {
+      globals: [
+        { path: 'React', weight: 60 },
+        { path: '__REACT_DEVTOOLS_GLOBAL_HOOK__', weight: 40 },
+      ],
+      dom: [
+        { selector: '[data-reactroot]', weight: 45 },
+        { selector: '[data-reactid]', weight: 40 },
+        { selector: '[data-react-checksum]', weight: 40 },
+      ],
+      resources: [
+        { urlRegex: /react(?:\.production|\.development)?(?:\.min)?\.js/i, weight: 35 },
+        { urlRegex: /react-dom(?:\.production|\.development)?(?:\.min)?\.js/i, weight: 35 },
+      ],
+    },
+    versionExtraction: {
+      fromGlobal: 'React.version',
+      fromResource: {
+        urlRegex: /react@([\d.]+)/i,
+        captureGroup: 1,
+      },
+    },
+  },
+  {
     id: 'jquery',
     name: 'jQuery',
     category: 'library',

@@ -45,9 +45,18 @@ describe('Technology Rule Registry', () => {
 
   it('should correctly filter rules by category', () => {
     const cmsRules = getRulesByCategory('cms');
-    expect(cmsRules.length).toBeGreaterThanOrEqual(4);
+    expect(cmsRules.length).toBeGreaterThanOrEqual(3);
     expect(cmsRules.some((r) => r.id === 'wordpress')).toBe(true);
-    expect(cmsRules.some((r) => r.id === 'shopify')).toBe(true);
+    expect(cmsRules.some((r) => r.id === 'webflow')).toBe(true);
+
+    const ecomRules = getRulesByCategory('ecommerce');
+    expect(ecomRules.length).toBeGreaterThanOrEqual(2);
+    expect(ecomRules.some((r) => r.id === 'shopify')).toBe(true);
+    expect(ecomRules.some((r) => r.id === 'woocommerce')).toBe(true);
+
+    const libraryRules = getRulesByCategory('library');
+    expect(libraryRules.some((r) => r.id === 'react')).toBe(true);
+    expect(libraryRules.some((r) => r.id === 'jquery')).toBe(true);
 
     const paymentRules = getRulesByCategory('payment');
     expect(paymentRules.length).toBeGreaterThanOrEqual(2);

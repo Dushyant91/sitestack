@@ -18,6 +18,8 @@ const APPROVED_GLOBAL_ALLOWLIST = [
 
   // Frameworks
   '__NEXT_DATA__',
+  '__next_f',
+  '__next_p',
   'next',
   'React',
   '__REACT_DEVTOOLS_GLOBAL_HOOK__',
@@ -110,6 +112,11 @@ export function harvestMainSignals(): Record<string, unknown> {
           const buildId = (val as Record<string, unknown>).buildId;
           const page = (val as Record<string, unknown>).page;
           result[key] = { buildId, page };
+        } else if (key === '__next_f') {
+          result[key] = {
+            rscStream: true,
+            chunkCount: Array.isArray(val) ? val.length : 1,
+          };
         } else if (typeof val === 'function') {
           result[key] = { __type: 'function' };
         } else if (typeof val === 'object') {

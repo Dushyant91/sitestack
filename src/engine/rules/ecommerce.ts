@@ -2,6 +2,39 @@ import { TechRule } from '../types';
 
 export const ecommerceRules: TechRule[] = [
   {
+    id: 'shopify',
+    name: 'Shopify',
+    category: 'ecommerce',
+    website: 'https://shopify.com',
+    icon: '/tech-icons/cms/shopify.svg',
+    description: 'Cloud-based commerce platform and online store engine.',
+    signals: {
+      globals: [
+        { path: 'Shopify', weight: 60 },
+        { path: 'ShopifyAnalytics', weight: 55 },
+        { path: 'BOOMR.themeName', weight: 45 },
+      ],
+      meta: [
+        {
+          name: 'shopify-digital-wallet',
+          weight: 50,
+        },
+      ],
+      resources: [
+        { urlRegex: /cdn\.shopify\.com\/s\/files\//i, weight: 30 },
+        { urlRegex: /cdn\.shopify\.com\/shopifycloud\//i, weight: 30 },
+        { urlRegex: /monorail-edge\.shopifysvc\.com/i, weight: 30 },
+      ],
+      dom: [
+        { selector: 'link[href*="cdn.shopify.com"]', weight: 30 },
+        { selector: 'input[name="shopify-digital-wallet"]', weight: 35 },
+      ],
+    },
+    versionExtraction: {
+      fromGlobal: 'Shopify.theme.version',
+    },
+  },
+  {
     id: 'woocommerce',
     name: 'WooCommerce',
     category: 'ecommerce',

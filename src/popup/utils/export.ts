@@ -26,7 +26,8 @@ export function exportToCsv(scanResult: ScanResult): void {
     'Version',
     'Confidence Score',
     'Confidence Tier',
-    'Type',
+    'Detection Type',
+    'Parent Dependency',
     'Evidence Summary',
     'Website',
   ];
@@ -45,7 +46,8 @@ export function exportToCsv(scanResult: ScanResult): void {
       escapeCsv(t.version || 'N/A'),
       escapeCsv(String(t.confidenceScore)),
       escapeCsv(t.confidenceTier.toUpperCase()),
-      escapeCsv(t.isInferred ? 'Inferred' : 'Direct'),
+      escapeCsv(t.detectionType === 'inferred' ? 'Inferred' : 'Direct'),
+      escapeCsv(t.parentDependency || 'None'),
       escapeCsv(evidenceSummary),
       escapeCsv(t.website),
     ].join(',');

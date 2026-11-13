@@ -103,7 +103,9 @@ export interface DetectedTechnology {
   version?: string;
   confidenceScore: number; // 0 - 100
   confidenceTier: ConfidenceTier;
-  isInferred?: boolean; // True if inferred from parent dependency (e.g. Next.js -> React) rather than direct detection
+  detectionType: 'direct' | 'inferred';
+  parentDependency?: string; // If inferred, the parent technology that implied it (e.g. 'Next.js')
+  isInferred?: boolean; // Convenience flag: true when detectionType === 'inferred'
   evidence: SignalEvidence[];
   website: string;
   icon: string;

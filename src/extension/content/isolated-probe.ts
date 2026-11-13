@@ -13,6 +13,8 @@ export interface IsolatedProbePayload {
 const PROBE_SELECTORS = [
   '#__next',
   'script#__NEXT_DATA__',
+  'meta[name="next-head-count"]',
+  'link[href*="/_next/static/"]',
   '[data-reactroot]',
   '[data-reactid]',
   '[data-react-checksum]',
