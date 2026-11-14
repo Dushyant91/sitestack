@@ -200,31 +200,55 @@ export function formatMultiScanExportCsv(scanResults: ScanResult[]): string {
   const rows: string[] = [];
   for (const scan of scanResults) {
     const scanDate = new Date(scan.timestamp).toISOString();
-    for (const t of scan.technologies) {
-      const rawSummary = t.evidence
-        .map((e) => {
-          const val = e.matchedValue && e.matchedValue !== 'present' ? ` [${e.matchedValue}]` : '';
-          return `${e.source}${val} (${e.weight}pts)`;
-        })
-        .join('; ');
-      const evidenceSummary = rawSummary.length > 250 ? rawSummary.slice(0, 247) + '...' : rawSummary;
+    const normalizedUrl = normalizeScanUrl(scan.url);
+
+    if (scan.technologies.length === 0) {
+      // For a scan with zero technologies, emit one CSV row containing
+      // scannedWebsite, scanDate, url, and 10 empty technology fields (13 columns total).
       rows.push(
         [
           escapeCsv(scan.domain),
           escapeCsv(scanDate),
-          escapeCsv(normalizeScanUrl(scan.url)),
-          escapeCsv(t.name),
-          escapeCsv(t.category),
-          escapeCsv(t.version || ''),
-          escapeCsv(t.confidenceScore),
-          escapeCsv(t.confidenceTier),
-          escapeCsv(t.detectionType),
-          escapeCsv(t.parentDependency || ''),
-          escapeCsv(t.confidenceReason || ''),
-          escapeCsv(evidenceSummary),
-          escapeCsv(t.website),
+          escapeCsv(normalizedUrl),
+          escapeCsv(''),
+          escapeCsv(''),
+          escapeCsv(''),
+          escapeCsv(''),
+          escapeCsv(''),
+          escapeCsv(''),
+          escapeCsv(''),
+          escapeCsv(''),
+          escapeCsv(''),
+          escapeCsv(''),
         ].join(',')
       );
+    } else {
+      for (const t of scan.technologies) {
+        const rawSummary = t.evidence
+          .map((e) => {
+            const val = e.matchedValue && e.matchedValue !== 'present' ? ` [${e.matchedValue}]` : '';
+            return `${e.source}${val} (${e.weight}pts)`;
+          })
+          .join('; ');
+        const evidenceSummary = rawSummary.length > 250 ? rawSummary.slice(0, 247) + '...' : rawSummary;
+        rows.push(
+          [
+            escapeCsv(scan.domain),
+            escapeCsv(scanDate),
+            escapeCsv(normalizedUrl),
+            escapeCsv(t.name),
+            escapeCsv(t.category),
+            escapeCsv(t.version || ''),
+            escapeCsv(t.confidenceScore),
+            escapeCsv(t.confidenceTier),
+            escapeCsv(t.detectionType),
+            escapeCsv(t.parentDependency || ''),
+            escapeCsv(t.confidenceReason || ''),
+            escapeCsv(evidenceSummary),
+            escapeCsv(t.website),
+          ].join(',')
+        );
+      }
     }
   }
 
