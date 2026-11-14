@@ -286,8 +286,9 @@ describe('Phase 4: Local Scan History & Advanced Export UI Suite', () => {
     expect(lines.length).toBe(3); // 1 header + 2 technologies
 
     expect(lines[0]).toBe(
-      'technology,category,version,confidenceScore,confidenceTier,detectionType,parentDependency,confidenceReason,evidenceSummary,website'
+      'scannedWebsite,technology,category,version,confidenceScore,confidenceTier,detectionType,parentDependency,confidenceReason,evidenceSummary,technologyWebsite'
     );
+    expect(lines[1]).toContain('"shopify-store.com"');
     expect(lines[1]).toContain('"Next.js"');
     expect(lines[1]).toContain('"14.2.3"');
     expect(lines[1]).toContain('"100"');
@@ -306,13 +307,14 @@ describe('Phase 4: Local Scan History & Advanced Export UI Suite', () => {
     expect(multiJson.exportedAt).toBeTruthy();
     expect(multiJson.scans.length).toBe(2);
     expect(multiJson.scans[0].domain).toBe('site-one.com');
+    expect(multiJson.scans[0].scannedWebsite).toBe('site-one.com');
     expect(multiJson.scans[1].domain).toBe('site-two.com');
 
-    // Multi-scan CSV (includes domain, scanDate, url leading columns)
+    // Multi-scan CSV (includes scannedWebsite, scanDate, url leading columns)
     const multiCsv = formatMultiScanExportCsv([scan1, scan2]);
     const lines = multiCsv.split('\r\n');
     expect(lines[0]).toBe(
-      'domain,scanDate,url,technology,category,version,confidenceScore,confidenceTier,detectionType,parentDependency,confidenceReason,evidenceSummary,website'
+      'scannedWebsite,scanDate,url,technology,category,version,confidenceScore,confidenceTier,detectionType,parentDependency,confidenceReason,evidenceSummary,technologyWebsite'
     );
     expect(lines.length).toBe(5); // 1 header + 2 techs for scan1 + 2 techs for scan2
     expect(lines[1]).toContain('"site-one.com"');

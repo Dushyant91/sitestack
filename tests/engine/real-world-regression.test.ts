@@ -384,6 +384,7 @@ describe('Real-World Detection Audit & Regression Test Suite', () => {
     expect(jsonOutput.technologies.length).toBe(2);
 
     const expectedKeys = [
+      'scannedWebsite',
       'technology',
       'category',
       'version',
@@ -393,6 +394,7 @@ describe('Real-World Detection Audit & Regression Test Suite', () => {
       'parentDependency',
       'confidenceReason',
       'evidenceSummary',
+      'technologyWebsite',
       'website',
     ];
 

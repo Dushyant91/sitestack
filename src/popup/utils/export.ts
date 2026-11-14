@@ -20,6 +20,7 @@ export function escapeCsv(str: string | number | undefined | null): string {
 }
 
 export interface ExportRecordJson {
+  scannedWebsite: string;
   technology: string;
   category: string;
   version: string | null;
@@ -34,12 +35,14 @@ export interface ExportRecordJson {
     weight: number;
     matchedValue?: string;
   }>;
-  website: string;
+  technologyWebsite: string;
+  website: string; // Backward compatibility alias for technologyWebsite
 }
 
 export interface StandardExportPayload {
+  scannedWebsite: string;
   url: string;
-  domain: string;
+  domain: string; // Backward compatibility alias for scannedWebsite
   timestamp: number;
   scanDurationMs: number;
   technologies: ExportRecordJson[];
@@ -55,12 +58,15 @@ export interface MultiScanExportPayload {
  * Formats a single scan result into standard structured JSON payload
  */
 export function formatExportJson(scanResult: ScanResult): StandardExportPayload {
+  const scannedDomain = scanResult.domain;
   return {
+    scannedWebsite: scannedDomain,
     url: normalizeScanUrl(scanResult.url),
-    domain: scanResult.domain,
+    domain: scannedDomain,
     timestamp: scanResult.timestamp,
     scanDurationMs: scanResult.scanDurationMs,
     technologies: scanResult.technologies.map((t) => ({
+      scannedWebsite: scannedDomain,
       technology: t.name,
       category: t.category,
       version: t.version || null,
@@ -75,6 +81,7 @@ export function formatExportJson(scanResult: ScanResult): StandardExportPayload 
         weight: e.weight,
         matchedValue: e.matchedValue,
       })),
+      technologyWebsite: t.website,
       website: t.website,
     })),
   };
@@ -97,6 +104,7 @@ export function exportToJson(scanResult: ScanResult): void {
  */
 export function formatExportCsv(scanResult: ScanResult): string {
   const headers = [
+    'scannedWebsite',
     'technology',
     'category',
     'version',
@@ -106,7 +114,7 @@ export function formatExportCsv(scanResult: ScanResult): string {
     'parentDependency',
     'confidenceReason',
     'evidenceSummary',
-    'website',
+    'technologyWebsite',
   ];
 
   const rows = scanResult.technologies.map((t) => {
@@ -118,6 +126,7 @@ export function formatExportCsv(scanResult: ScanResult): string {
       .join('; ');
     const evidenceSummary = rawSummary.length > 250 ? rawSummary.slice(0, 247) + '...' : rawSummary;
     return [
+      escapeCsv(scanResult.domain),
       escapeCsv(t.name),
       escapeCsv(t.category),
       escapeCsv(t.version || ''),
@@ -173,7 +182,7 @@ export function exportMultiScanToJson(scanResults: ScanResult[], customFilename?
  */
 export function formatMultiScanExportCsv(scanResults: ScanResult[]): string {
   const headers = [
-    'domain',
+    'scannedWebsite',
     'scanDate',
     'url',
     'technology',
@@ -185,7 +194,7 @@ export function formatMultiScanExportCsv(scanResults: ScanResult[]): string {
     'parentDependency',
     'confidenceReason',
     'evidenceSummary',
-    'website',
+    'technologyWebsite',
   ];
 
   const rows: string[] = [];

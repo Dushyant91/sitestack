@@ -419,7 +419,7 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       stats: { total: 2, high: 1, medium: 1, low: 0 },
     };
 
-    it('5.1. CSV contains exactly 10 headers and every data row contains exactly 10 fields', () => {
+    it('5.1. CSV contains exactly 11 headers and every data row contains exactly 11 fields', () => {
       const csv = formatExportCsv(sampleScan);
       const lines = csv.split('\r\n').filter((l) => l.trim().length > 0);
 
@@ -429,6 +429,7 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       const headers = headerLine.split(',');
 
       expect(headers).toEqual([
+        'scannedWebsite',
         'technology',
         'category',
         'version',
@@ -438,16 +439,16 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
         'parentDependency',
         'confidenceReason',
         'evidenceSummary',
-        'website',
+        'technologyWebsite',
       ]);
-      expect(headers.length).toBe(10);
+      expect(headers.length).toBe(11);
 
       // Simple regex-based CSV row splitter respecting double quotes
       for (let i = 1; i < lines.length; i++) {
         // Match comma-separated values where values are quoted
         const matches = lines[i].match(/(?:^|,)(?:"((?:[^"]|"")*)"|([^,]*))/g);
         expect(matches).toBeDefined();
-        expect(matches?.length).toBe(10);
+        expect(matches?.length).toBe(11);
       }
     });
 
@@ -485,7 +486,7 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       expect(csv).toContain('"Reason with ""quotes"", commas, and\nnewlines."');
     });
 
-    it('5.3. Empty scan exports valid CSV (10 headers, 0 data rows) and valid empty JSON array', () => {
+    it('5.3. Empty scan exports valid CSV (11 headers, 0 data rows) and valid empty JSON array', () => {
       const emptyScan: ScanResult = {
         url: 'https://www.youtube.com',
         domain: 'youtube.com',
@@ -498,10 +499,12 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       const csv = formatExportCsv(emptyScan);
       const csvLines = csv.split('\r\n').filter((l) => l.trim().length > 0);
       expect(csvLines.length).toBe(1); // Headers only
-      expect(csvLines[0].split(',').length).toBe(10);
+      expect(csvLines[0].split(',').length).toBe(11);
 
       const json = formatExportJson(emptyScan);
       expect(json.technologies).toEqual([]);
+      expect(json.scannedWebsite).toBe('youtube.com');
+      expect(json.domain).toBe('youtube.com');
       expect(json.url).toBe('https://www.youtube.com/');
       const parsed = JSON.parse(JSON.stringify(json));
       expect(parsed.technologies).toEqual([]);
@@ -553,7 +556,12 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
 
       for (let i = 0; i < sampleScan.technologies.length; i++) {
         expect(json.technologies[i].technology).toBe(sampleScan.technologies[i].name);
+        expect(json.technologies[i].scannedWebsite).toBe(sampleScan.domain);
+        expect(json.technologies[i].technologyWebsite).toBe(sampleScan.technologies[i].website);
+        expect(json.technologies[i].website).toBe(sampleScan.technologies[i].website);
+        expect(csvRows[i + 1]).toContain(`"${sampleScan.domain}"`);
         expect(csvRows[i + 1]).toContain(`"${sampleScan.technologies[i].name}"`);
+        expect(csvRows[i + 1]).toContain(`"${sampleScan.technologies[i].website}"`);
       }
     });
   });
