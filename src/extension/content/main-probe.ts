@@ -32,6 +32,7 @@ export function harvestMainSignals(): Record<string, unknown> {
     '__next_p',
     'next',
     'React',
+    '__REACT_DEVTOOLS_GLOBAL_HOOK__',
     'Vue',
     '__VUE__',
     '__VUE_DEVTOOLS_GLOBAL_HOOK__',

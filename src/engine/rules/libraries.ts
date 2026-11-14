@@ -11,6 +11,7 @@ export const libraryRules: TechRule[] = [
     signals: {
       globals: [
         { path: 'React', weight: 60 },
+        { path: '__REACT_DEVTOOLS_GLOBAL_HOOK__', weight: 25 }, // Supporting signal only: hook can be injected by browser extensions; alone it must not exceed noise floor (30)
       ],
       dom: [
         { selector: '[data-reactroot]', weight: 45 },

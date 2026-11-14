@@ -9,9 +9,35 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
   // =========================================================================
   // 1. REACT DEVTOOLS CONTROLLED TESTS
   // =========================================================================
-  describe('1. React DevTools Controlled Verification', () => {
-    it('1.1. Non-React site (Amazon.in) with React DevTools hook yields ZERO React detections', () => {
-      // Simulates Amazon.in with React Developer Tools extension active in Chrome
+  // =========================================================================
+  // 1. REACT DEVTOOLS CONTROLLED TESTS (5 SCENARIOS & EVIDENCE CLASSIFICATION)
+  // =========================================================================
+  describe('1. React DevTools Controlled Verification (5 Matrix Scenarios)', () => {
+    // Scenario 1: Profile with React DevTools + React website -> React detected
+    it('Scenario 1: Profile with React DevTools + React website -> React detected', () => {
+      const reactDevSite: HarvestedSignals = {
+        url: 'https://react.dev',
+        globals: {
+          React: { version: '18.3.1' },
+          __REACT_DEVTOOLS_GLOBAL_HOOK__: { active: true },
+        },
+        dom: [{ selector: '[data-reactroot]' }],
+        meta: [],
+        resources: ['https://react.dev/react.production.min.js'],
+      };
+
+      const result = evaluateSignals(reactDevSite);
+      const react = result.technologies.find((t) => t.id === 'react');
+
+      expect(react).toBeDefined();
+      expect(react?.detectionType).toBe('direct');
+      expect(react?.version).toBe('18.3.1');
+      expect(react?.confidenceTier).toBe('high');
+      expect(react?.confidenceScore).toBeGreaterThanOrEqual(80);
+    });
+
+    // Scenario 2: Profile with React DevTools + non-React website -> React NOT detected
+    it('Scenario 2: Profile with React DevTools + non-React website (Amazon.in) -> React NOT detected', () => {
       const amazonWithDevTools: HarvestedSignals = {
         url: 'https://www.amazon.in',
         globals: {
@@ -31,8 +57,30 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       expect(result.technologies.length).toBe(0);
     });
 
-    it('1.2. Non-React site (Amazon.in) without React DevTools hook yields ZERO React detections', () => {
-      const amazonWithoutDevTools: HarvestedSignals = {
+    // Scenario 3: Clean profile + React website -> React detected
+    it('Scenario 3: Clean profile (no DevTools) + React website -> React detected', () => {
+      const reactCleanProfile: HarvestedSignals = {
+        url: 'https://react.dev',
+        globals: {
+          React: { version: '18.3.1' },
+        },
+        dom: [{ selector: '[data-reactroot]' }],
+        meta: [],
+        resources: ['https://react.dev/react.production.min.js'],
+      };
+
+      const result = evaluateSignals(reactCleanProfile);
+      const react = result.technologies.find((t) => t.id === 'react');
+
+      expect(react).toBeDefined();
+      expect(react?.detectionType).toBe('direct');
+      expect(react?.version).toBe('18.3.1');
+      expect(react?.confidenceTier).toBe('high');
+    });
+
+    // Scenario 4: Clean profile + non-React website -> React NOT detected
+    it('Scenario 4: Clean profile (no DevTools) + non-React website (Amazon.in) -> React NOT detected', () => {
+      const amazonClean: HarvestedSignals = {
         url: 'https://www.amazon.in',
         globals: {},
         dom: [],
@@ -42,11 +90,32 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
         ],
       };
 
-      const result = evaluateSignals(amazonWithoutDevTools);
+      const result = evaluateSignals(amazonClean);
       expect(result.technologies.find((t) => t.id === 'react')).toBeUndefined();
+      expect(result.technologies.length).toBe(0);
     });
 
-    it('1.3. Non-React reader site (Medium.com) with React DevTools hook yields ZERO React detections', () => {
+    // Scenario 5: Profile with React DevTools + website with only React DevTools hook -> React NOT detected
+    it('Scenario 5: Profile with React DevTools + website with only hook -> React NOT detected (suppressed below noise floor)', () => {
+      const hookOnlySite: HarvestedSignals = {
+        url: 'https://example-blog.org',
+        globals: {
+          __REACT_DEVTOOLS_GLOBAL_HOOK__: { renderers: {}, sub: () => {} },
+        },
+        dom: [],
+        meta: [],
+        resources: ['https://example-blog.org/style.css'],
+      };
+
+      const result = evaluateSignals(hookOnlySite);
+      const react = result.technologies.find((t) => t.id === 'react');
+
+      // Hook alone has weight 25 < 30 noise floor, so it MUST be suppressed to 0 detections
+      expect(react).toBeUndefined();
+      expect(result.technologies.length).toBe(0);
+    });
+
+    it('1.6. Medium.com with React DevTools hook yields ZERO React detections and preserves GA4 + Cloudflare', () => {
       const mediumSite: HarvestedSignals = {
         url: 'https://medium.com',
         globals: {
@@ -62,15 +131,12 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       };
 
       const result = evaluateSignals(mediumSite);
-      const react = result.technologies.find((t) => t.id === 'react');
-      expect(react).toBeUndefined(); // Zero false React detection
-
-      // GA4 and Cloudflare should still be detected
+      expect(result.technologies.find((t) => t.id === 'react')).toBeUndefined();
       expect(result.technologies.find((t) => t.id === 'google-analytics')).toBeDefined();
       expect(result.technologies.find((t) => t.id === 'cloudflare')).toBeDefined();
     });
 
-    it('1.4. Notion.com: Next.js implies React at 75 Medium Inferred despite DevTools hook presence', () => {
+    it('1.7. Notion.com: Next.js implies React at 75 Medium Inferred despite DevTools hook presence', () => {
       const notionSite: HarvestedSignals = {
         url: 'https://www.notion.com',
         globals: {
@@ -95,7 +161,7 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       expect(nextjs?.version).toBe('16.4.2');
       expect(nextjs?.confidenceTier).toBe('high');
 
-      // React MUST be Inferred from Next.js, NOT reported as direct 40 Low
+      // React MUST be Inferred from Next.js, NOT reported as direct Low
       expect(react).toBeDefined();
       expect(react?.detectionType).toBe('inferred');
       expect(react?.isInferred).toBe(true);
@@ -104,27 +170,25 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       expect(react?.confidenceTier).toBe('medium');
     });
 
-    it('1.5. Genuine React standalone application (react.dev) is detected with High confidence', () => {
-      const reactDevSite: HarvestedSignals = {
-        url: 'https://react.dev',
+    it('1.8. Evidence Classification: Global properties are correctly described as runtime globals, not network assets', () => {
+      const globalOnlySite: HarvestedSignals = {
+        url: 'https://example.com',
         globals: {
-          React: { version: '18.3.1' },
-          __REACT_DEVTOOLS_GLOBAL_HOOK__: { active: true },
+          si: () => {},
         },
-        dom: [{ selector: '[data-reactroot]' }],
+        dom: [],
         meta: [],
-        resources: ['https://react.dev/react.production.min.js'],
+        resources: [],
       };
 
-      const result = evaluateSignals(reactDevSite);
-      const react = result.technologies.find((t) => t.id === 'react');
+      const result = evaluateSignals(globalOnlySite);
+      const vercel = result.technologies.find((t) => t.id === 'vercel');
 
-      expect(react).toBeDefined();
-      expect(react?.detectionType).toBe('direct');
-      expect(react?.isInferred).toBe(false);
-      expect(react?.version).toBe('18.3.1');
-      expect(react?.confidenceTier).toBe('high');
-      expect(react?.confidenceScore).toBeGreaterThanOrEqual(80);
+      expect(vercel).toBeDefined();
+      expect(vercel?.confidenceTier).toBe('low');
+      // Must NOT describe global as a "standalone network asset"
+      expect(vercel?.confidenceReason).toContain('Identified via runtime global (window.si)');
+      expect(vercel?.confidenceReason).not.toContain('standalone network asset');
     });
   });
 
@@ -147,11 +211,12 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       expect(cf).toBeDefined();
       expect(cf?.confidenceScore).toBe(45);
       expect(cf?.confidenceTier).toBe('low');
+      expect(cf?.confidenceReason).toContain('Identified via standalone network asset');
       expect(cf?.confidenceReason).toContain('without corroborating runtime globals or DOM elements');
-      expect(cf?.confidenceReason).toContain('does NOT verify Cloudflare CDN, DNS, or server infrastructure hosting');
+      expect(cf?.confidenceReason).toContain('not confirmed Cloudflare hosting or DNS infrastructure');
     });
 
-    it('2.2. Notion.com: Ambiguous window.si alone yields ZERO Vercel detections', () => {
+    it('2.2. Notion.com: window.si alone yields Low tier (45) with explicit telemetry non-hosting disclaimer', () => {
       const notionAmbiguousSi: HarvestedSignals = {
         url: 'https://www.notion.com',
         globals: {
@@ -165,9 +230,11 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       const result = evaluateSignals(notionAmbiguousSi);
       const vercel = result.technologies.find((t) => t.id === 'vercel');
 
-      // Must be suppressed below noise floor (30)
-      expect(vercel).toBeUndefined();
-      expect(result.technologies.length).toBe(0);
+      expect(vercel).toBeDefined();
+      expect(vercel?.confidenceScore).toBe(45);
+      expect(vercel?.confidenceTier).toBe('low');
+      expect(vercel?.confidenceReason).toContain('Identified via runtime global (window.si)');
+      expect(vercel?.confidenceReason).toContain('indicates Vercel Speed Insights / Analytics telemetry, not confirmed Vercel deployment or cloud hosting');
     });
 
     it('2.3. Vercel with verified script and telemetry global achieves High confidence', () => {
@@ -208,8 +275,9 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       expect(shopify).toBeDefined();
       expect(shopify?.confidenceScore).toBe(30);
       expect(shopify?.confidenceTier).toBe('low');
+      expect(shopify?.confidenceReason).toContain('Identified via standalone network asset');
       expect(shopify?.confidenceReason).toContain('without corroborating runtime globals or DOM elements');
-      expect(shopify?.confidenceReason).toContain('does not confirm an active Shopify storefront');
+      expect(shopify?.confidenceReason).toContain('Observed cdn.shopify.com asset indicates Shopify-hosted asset/CDN, not an active Shopify storefront');
     });
   });
 

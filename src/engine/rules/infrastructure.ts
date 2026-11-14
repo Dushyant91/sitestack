@@ -27,8 +27,8 @@ export const infrastructureRules: TechRule[] = [
     description: 'Frontend cloud platform powering edge deployments and serverless functions.',
     signals: {
       globals: [
-        { path: 'va', weight: 25 }, // Supporting signal: 2-letter global alone must not trigger Vercel without script corroboration
-        { path: 'si', weight: 25 }, // Supporting signal: 2-letter global alone must not trigger Vercel without script corroboration
+        { path: 'va', weight: 45 }, // Client telemetry global (Vercel Analytics): preserved at Low tier without server corroboration
+        { path: 'si', weight: 45 }, // Client telemetry global (Vercel Speed Insights): preserved at Low tier without server corroboration
       ],
       resources: [
         { urlRegex: /\/_vercel\/insights\/script\.js/i, weight: 45 },

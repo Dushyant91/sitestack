@@ -248,14 +248,29 @@ export function evaluateRule(
     const primary = matchedEvidence[0]?.source || 'primary signal';
     confidenceReason = `Medium confidence (Direct): Verified by ${primary}, but lacks multi-class corroboration to confirm full installation.`;
   } else {
-    const primary = matchedEvidence[0]?.source || 'standalone asset';
-    const baseLowReason = `Low confidence (Direct): Identified via standalone network asset (${primary}) without corroborating runtime globals or DOM elements.`;
+    const primaryEv = matchedEvidence[0];
+    const primary = primaryEv?.source || 'standalone asset';
+    let baseLowReason = '';
+    if (primaryEv?.type === 'global') {
+      baseLowReason = `Low confidence (Direct): Identified via runtime global (${primary}) without corroborating DOM elements or script assets.`;
+    } else if (primaryEv?.type === 'dom') {
+      baseLowReason = `Low confidence (Direct): Identified via DOM element (${primary}) without corroborating runtime globals or script assets.`;
+    } else if (primaryEv?.type === 'meta') {
+      baseLowReason = `Low confidence (Direct): Identified via meta tag (${primary}) without corroborating runtime globals or script assets.`;
+    } else if (primaryEv?.type === 'header') {
+      baseLowReason = `Low confidence (Direct): Identified via response header (${primary}) without corroborating runtime globals or DOM elements.`;
+    } else {
+      baseLowReason = `Low confidence (Direct): Identified via standalone network asset (${primary}) without corroborating runtime globals or DOM elements.`;
+    }
+
     if (rule.id === 'cloudflare' && matchedEvidence.some((e) => e.source.includes('beacon'))) {
-      confidenceReason = `${baseLowReason} Observed Cloudflare Web Analytics beacon script indicates client-side telemetry but does NOT verify Cloudflare CDN, DNS, or server infrastructure hosting.`;
+      confidenceReason = `${baseLowReason} Observed Cloudflare Web Analytics beacon script indicates client-side telemetry, not confirmed Cloudflare hosting or DNS infrastructure.`;
+    } else if (rule.id === 'vercel' && matchedEvidence.some((e) => e.source.includes('window.si') || e.source.includes('window.va'))) {
+      confidenceReason = `${baseLowReason} Observed window.si / window.va indicates Vercel Speed Insights / Analytics telemetry, not confirmed Vercel deployment or cloud hosting.`;
     } else if (rule.category === 'infrastructure') {
-      confidenceReason = `${baseLowReason} Indicates client-side telemetry or service integration, but does NOT verify server infrastructure hosting.`;
+      confidenceReason = `${baseLowReason} Indicates client-side telemetry or service integration, not confirmed server infrastructure hosting.`;
     } else if (rule.id === 'shopify') {
-      confidenceReason = `${baseLowReason} Identified via standalone CDN asset; does not confirm an active Shopify storefront.`;
+      confidenceReason = `${baseLowReason} Observed cdn.shopify.com asset indicates Shopify-hosted asset/CDN, not an active Shopify storefront.`;
     } else {
       confidenceReason = baseLowReason;
     }
