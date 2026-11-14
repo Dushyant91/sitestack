@@ -27,6 +27,42 @@ export function getConfidenceTier(score: number): ConfidenceTier {
 }
 
 /**
+ * Safely serializes matched global values into human-readable strings without placeholder "{...}"
+ */
+function formatMatchedValue(val: unknown): string {
+  if (val === undefined || val === null) return '';
+  if (typeof val === 'string') return val.slice(0, 80);
+  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+  if (typeof val === 'function') return 'function()';
+  try {
+    const keys = Object.keys(val as object);
+    if (keys.length === 0) return 'present';
+    const json = JSON.stringify(val);
+    return json.length > 80 ? json.slice(0, 77) + '...' : json;
+  } catch {
+    return 'present';
+  }
+}
+
+/**
+ * Truncates long resource URLs while preserving hostname, path, and script name
+ */
+function truncateResourceUrl(url: string, maxLength = 85): string {
+  if (url.length <= maxLength) return url;
+  try {
+    const parsed = new URL(url.startsWith('http') ? url : `https://example.com${url.startsWith('/') ? '' : '/'}${url}`);
+    const cleanBase = `${url.startsWith('http') ? parsed.origin : ''}${parsed.pathname}`;
+    if (parsed.search && cleanBase.length < maxLength) {
+      const remaining = maxLength - cleanBase.length;
+      return `${cleanBase}?${parsed.search.slice(1, Math.max(1, remaining - 4))}...`;
+    }
+    return '...' + url.slice(-(maxLength - 3));
+  } catch {
+    return '...' + url.slice(-(maxLength - 3));
+  }
+}
+
+/**
  * Evaluates a single rule against harvested browser signals
  */
 export function evaluateRule(
@@ -45,7 +81,7 @@ export function evaluateRule(
           matchedEvidence.push({
             type: 'global',
             source: `window.${g.path}`,
-            matchedValue: typeof val === 'object' ? '{...}' : String(val).slice(0, 50),
+            matchedValue: formatMatchedValue(val),
             weight: g.weight,
           });
           matchedSignalTypes.add('global');
@@ -124,7 +160,7 @@ export function evaluateRule(
 
           matchedEvidence.push({
             type: 'resource',
-            source: url.length > 70 ? '...' + url.slice(-67) : url,
+            source: truncateResourceUrl(url),
             matchedValue: url,
             weight: effectiveWeight,
           });
@@ -213,7 +249,16 @@ export function evaluateRule(
     confidenceReason = `Medium confidence (Direct): Verified by ${primary}, but lacks multi-class corroboration to confirm full installation.`;
   } else {
     const primary = matchedEvidence[0]?.source || 'standalone asset';
-    confidenceReason = `Low confidence (Direct): Identified via standalone network asset (${primary}) without corroborating runtime globals or DOM elements.`;
+    const baseLowReason = `Low confidence (Direct): Identified via standalone network asset (${primary}) without corroborating runtime globals or DOM elements.`;
+    if (rule.id === 'cloudflare' && matchedEvidence.some((e) => e.source.includes('beacon'))) {
+      confidenceReason = `${baseLowReason} Observed Cloudflare Web Analytics beacon script indicates client-side telemetry but does NOT verify Cloudflare CDN, DNS, or server infrastructure hosting.`;
+    } else if (rule.category === 'infrastructure') {
+      confidenceReason = `${baseLowReason} Indicates client-side telemetry or service integration, but does NOT verify server infrastructure hosting.`;
+    } else if (rule.id === 'shopify') {
+      confidenceReason = `${baseLowReason} Identified via standalone CDN asset; does not confirm an active Shopify storefront.`;
+    } else {
+      confidenceReason = baseLowReason;
+    }
   }
 
   // Next.js version transparency note
@@ -277,7 +322,10 @@ export function resolveImpliedTechnologies(
           );
         }
         if (impliedId === 'react' && detected.id === 'nextjs') {
-          return ev.type === 'global' || (ev.type === 'dom' && ev.source.includes('[data-reactroot]'));
+          return (
+            (ev.type === 'global' && ev.source !== 'window.__REACT_DEVTOOLS_GLOBAL_HOOK__') ||
+            (ev.type === 'dom' && ev.source.includes('[data-reactroot]'))
+          );
         }
         if (impliedId === 'wordpress' && detected.id === 'woocommerce') {
           // If WooCommerce is detected with High confidence (>= 80), WordPress requires independent core proof (>= 50)

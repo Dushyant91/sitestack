@@ -126,5 +126,9 @@ export interface ScanResult {
     medium: number;
     low: number;
   };
+  /**
+   * Detection engine evaluation latency in milliseconds (pure CPU time spent evaluating rules and scoring).
+   * Does not include browser tab querying, probe script injection, or storage persistence.
+   */
   scanDurationMs: number;
 }

@@ -1,4 +1,5 @@
 import { ScanResult } from '../../engine/types';
+import { normalizeScanUrl } from '../../extension/storage/history';
 
 function triggerDownload(blob: Blob, filename: string): void {
   if (typeof document === 'undefined') return;
@@ -55,7 +56,7 @@ export interface MultiScanExportPayload {
  */
 export function formatExportJson(scanResult: ScanResult): StandardExportPayload {
   return {
-    url: scanResult.url,
+    url: normalizeScanUrl(scanResult.url),
     domain: scanResult.domain,
     timestamp: scanResult.timestamp,
     scanDurationMs: scanResult.scanDurationMs,
@@ -109,7 +110,13 @@ export function formatExportCsv(scanResult: ScanResult): string {
   ];
 
   const rows = scanResult.technologies.map((t) => {
-    const evidenceSummary = t.evidence.map((e) => `${e.source} (${e.weight}pts)`).join('; ');
+    const rawSummary = t.evidence
+      .map((e) => {
+        const val = e.matchedValue && e.matchedValue !== 'present' ? ` [${e.matchedValue}]` : '';
+        return `${e.source}${val} (${e.weight}pts)`;
+      })
+      .join('; ');
+    const evidenceSummary = rawSummary.length > 250 ? rawSummary.slice(0, 247) + '...' : rawSummary;
     return [
       escapeCsv(t.name),
       escapeCsv(t.category),
@@ -185,12 +192,18 @@ export function formatMultiScanExportCsv(scanResults: ScanResult[]): string {
   for (const scan of scanResults) {
     const scanDate = new Date(scan.timestamp).toISOString();
     for (const t of scan.technologies) {
-      const evidenceSummary = t.evidence.map((e) => `${e.source} (${e.weight}pts)`).join('; ');
+      const rawSummary = t.evidence
+        .map((e) => {
+          const val = e.matchedValue && e.matchedValue !== 'present' ? ` [${e.matchedValue}]` : '';
+          return `${e.source}${val} (${e.weight}pts)`;
+        })
+        .join('; ');
+      const evidenceSummary = rawSummary.length > 250 ? rawSummary.slice(0, 247) + '...' : rawSummary;
       rows.push(
         [
           escapeCsv(scan.domain),
           escapeCsv(scanDate),
-          escapeCsv(scan.url),
+          escapeCsv(normalizeScanUrl(scan.url)),
           escapeCsv(t.name),
           escapeCsv(t.category),
           escapeCsv(t.version || ''),
