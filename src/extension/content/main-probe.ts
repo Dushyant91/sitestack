@@ -32,7 +32,6 @@ export function harvestMainSignals(): Record<string, unknown> {
     '__next_p',
     'next',
     'React',
-    '__REACT_DEVTOOLS_GLOBAL_HOOK__',
     'Vue',
     '__VUE__',
     '__VUE_DEVTOOLS_GLOBAL_HOOK__',
@@ -115,15 +114,6 @@ export function harvestMainSignals(): Record<string, unknown> {
           result[key] = {
             Tooltip: { VERSION: typeof ver === 'string' ? ver : undefined },
           };
-        } else if (key === '__REACT_DEVTOOLS_GLOBAL_HOOK__') {
-          // Prevent extension false-positives: only record if React renderers are actively registered
-          const renderers = (val as Record<string, unknown>).renderers;
-          const hasRenderers = renderers && typeof renderers === 'object' &&
-            (('size' in (renderers as Record<string, unknown>) && typeof (renderers as { size: number }).size === 'number' && (renderers as { size: number }).size > 0) ||
-             Object.keys(renderers).length > 0);
-          if (hasRenderers) {
-            result[key] = { active: true };
-          }
         } else if (key === '__VP_HASH_MAP__') {
           result[key] = { chunkMap: true };
         } else if (key === '__VITEPRESS__') {

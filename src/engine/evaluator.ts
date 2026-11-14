@@ -323,7 +323,7 @@ export function resolveImpliedTechnologies(
         }
         if (impliedId === 'react' && detected.id === 'nextjs') {
           return (
-            (ev.type === 'global' && ev.source !== 'window.__REACT_DEVTOOLS_GLOBAL_HOOK__') ||
+            (ev.type === 'global' && ev.source === 'window.React') ||
             (ev.type === 'dom' && ev.source.includes('[data-reactroot]'))
           );
         }
