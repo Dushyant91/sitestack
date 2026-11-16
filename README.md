@@ -148,7 +148,7 @@ SiteStack adheres to the strictest privacy principles:
   - `storage`: Retains up to 50 recent scans locally in `chrome.storage.local`.
 - **Zero Form or Input Inspection:** Probes never read input values, textarea elements, passwords, cookies, or user session tokens.
 - **Multi-Layer Evidence URL Sanitization:** Scanned URLs and resource evidence URLs are sanitized across evaluation, storage, and exports (`src/shared/url.ts`). Sensitive parameters (`token`, `auth`, `key`, `secret`, `session_id`, `utm_*`, `gclid`, `fbclid`) and hash fragments are permanently stripped.
-- **Version Parameter Preservation & Measurement Allowlist:** Safe version parameters (`ver`, `v`) and validated public measurement IDs matching `/^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+|UA-[0-9]+-[0-9]+)$/i` (`id`, `tid`) are preserved where required for software version extraction; arbitrary user/account IDs are stripped.
+- **Strict Version Parameter Validation & Measurement Allowlist:** The query parameter `ver` is preserved only when matching standard SemVer/numeric release version patterns (`/^[0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?$/`); unvalidated, token-like, or session-like values are stripped. The parameter `v` is stripped unconditionally because no supported production detection rule relies on it. Public measurement IDs matching `/^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+|UA-[0-9]+-[0-9]+)$/i` (`id`, `tid`) are preserved; arbitrary user/account/transaction IDs are stripped.
 - **Automatic Legacy History Migration:** Stored historical records are audited on read; legacy unsanitized records are sanitized and immediately written back to `chrome.storage.local`.
 
 For full details, read our [PRIVACY_POLICY.md](file:///D:/SiteStack/PRIVACY_POLICY.md).
@@ -180,7 +180,7 @@ To compile the extension bundle from TypeScript source code:
 # Install dependencies
 npm install
 
-# Run complete test suite (307 tests across 21 test files)
+# Run complete test suite (310 tests across 21 test files)
 npm test
 
 # Build production bundle to dist/

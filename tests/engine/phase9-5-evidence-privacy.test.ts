@@ -38,8 +38,9 @@ describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification'
       expect(sanitizeResourceUrl('https://example.com/js/jquery.min.js?ver=3.7.1&token=SECRET')).toBe(
         'https://example.com/js/jquery.min.js?ver=3.7.1'
       );
+      // 'v' parameter is stripped as no production rule relies on it
       expect(sanitizeResourceUrl('https://example.com/css/bootstrap.min.css?v=5.3.0&session_id=SESS')).toBe(
-        'https://example.com/css/bootstrap.min.css?v=5.3.0'
+        'https://example.com/css/bootstrap.min.css'
       );
       expect(sanitizeResourceUrl('https://www.googletagmanager.com/gtag/js?id=G-12345&utm_source=ad')).toBe(
         'https://www.googletagmanager.com/gtag/js?id=G-12345'
@@ -60,8 +61,9 @@ describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification'
       expect(sanitizeResourceUrl('https://example.com/script.js?id=987654321')).toBe(
         'https://example.com/script.js'
       );
+      // 'v' parameter and invalid tid are both stripped
       expect(sanitizeResourceUrl('https://example.com/payment.js?tid=txn_checkout_888&v=1.2')).toBe(
-        'https://example.com/payment.js?v=1.2'
+        'https://example.com/payment.js'
       );
 
       // Public GTM and GA4 measurement container tags must be preserved
@@ -101,9 +103,9 @@ describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification'
       const bareRelative = 'assets/vendor/react.min.js?token=SECRET123&ver=18.3.1';
       expect(sanitizeResourceUrl(bareRelative)).toBe('assets/vendor/react.min.js?ver=18.3.1');
 
-      // Protocol-relative URLs
-      const protoRel = '//cdn.example.com/lib.js?token=SECRET&v=1.0';
-      expect(sanitizeResourceUrl(protoRel)).toBe('//cdn.example.com/lib.js?v=1.0');
+      // Protocol-relative URLs with valid SemVer
+      const protoRel = '//cdn.example.com/lib.js?token=SECRET&ver=1.0';
+      expect(sanitizeResourceUrl(protoRel)).toBe('//cdn.example.com/lib.js?ver=1.0');
 
       // Malformed URL fallback
       const malformed = 'not-a-valid-url?token=SECRET&session=XYZ&ver=1.0';
@@ -127,9 +129,17 @@ describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification'
       expect(isSensitiveQueryParam('gclid')).toBe(true);
       expect(isSensitiveQueryParam('utm_campaign')).toBe(true);
 
-      // Safe parameter checks
-      expect(isSensitiveQueryParam('ver')).toBe(false);
-      expect(isSensitiveQueryParam('v')).toBe(false);
+      // Phase 9.6.2: 'v' is stripped unconditionally; 'ver' requires valid version value
+      expect(isSensitiveQueryParam('v')).toBe(true);
+      expect(isSensitiveQueryParam('v', '5.3.0')).toBe(true);
+      expect(isSensitiveQueryParam('v', 'SECRET_TOKEN')).toBe(true);
+      expect(isSensitiveQueryParam('ver')).toBe(true);
+      expect(isSensitiveQueryParam('ver', '')).toBe(true);
+      expect(isSensitiveQueryParam('ver', 'user_session_SECRET123')).toBe(true);
+      expect(isSensitiveQueryParam('ver', '6.4.2')).toBe(false);
+      expect(isSensitiveQueryParam('ver', '11.4.0-dev.20261116')).toBe(false);
+
+      // Non-sensitive arbitrary keys
       expect(isSensitiveQueryParam('version')).toBe(false);
       expect(isSensitiveQueryParam('author')).toBe(false); // contains "auth", but not credential
       expect(isSensitiveQueryParam('page')).toBe(false);
@@ -147,6 +157,98 @@ describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification'
       const cleanWithVer = sanitizeResourceEvidenceString(truncatedWithVer);
       expect(cleanWithVer).toBe('https://example.com/assets/react.min.js?ver=18.3.1');
       expect(cleanWithVer).not.toContain('SECRET123');
+    });
+
+    it('1.7. Phase 9.6.2: Strictly validates version query parameter (ver) and strips unvalidated v parameter', () => {
+      // 1. Preserves valid SemVer and release version strings under ?ver=
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=6.4.2')).toBe(
+        'https://example.com/asset.js?ver=6.4.2'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=11.4.0-dev.20261116')).toBe(
+        'https://example.com/asset.js?ver=11.4.0-dev.20261116'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=3.7.1')).toBe(
+        'https://example.com/asset.js?ver=3.7.1'
+      );
+
+      // 2. Strips arbitrary, non-version, or session/token values under ?ver=
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=user_session_SECRET123')).toBe(
+        'https://example.com/asset.js'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=token_ABC123')).toBe(
+        'https://example.com/asset.js'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=account_private_identifier')).toBe(
+        'https://example.com/asset.js'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=')).toBe(
+        'https://example.com/asset.js'
+      );
+
+      // 3. Strips ?v= unconditionally (no production detection rule relies on it)
+      expect(sanitizeResourceUrl('https://example.com/asset.css?v=5.3.0')).toBe(
+        'https://example.com/asset.css'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?v=account_private_identifier')).toBe(
+        'https://example.com/asset.js'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?v=SECRET_TOKEN')).toBe(
+        'https://example.com/asset.js'
+      );
+
+      // 4. Mixed-case VER and V parameters
+      expect(sanitizeResourceUrl('https://example.com/asset.js?VER=6.4.2')).toBe(
+        'https://example.com/asset.js?VER=6.4.2'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?VER=user_session_SECRET123')).toBe(
+        'https://example.com/asset.js'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.css?V=5.3.0')).toBe(
+        'https://example.com/asset.css'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?V=SECRET_TOKEN')).toBe(
+        'https://example.com/asset.js'
+      );
+
+      // 5. URL-encoded parameter names and values
+      expect(sanitizeResourceUrl('https://example.com/asset.js?%76%65%72=6.4.2')).toBe(
+        'https://example.com/asset.js?ver=6.4.2'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=6%2E4%2E2')).toBe(
+        'https://example.com/asset.js?ver=6.4.2'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=11%2E4%2E0%2Ddev%2E20261116')).toBe(
+        'https://example.com/asset.js?ver=11.4.0-dev.20261116'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?%76%65%72=user%5Fsession%5FSECRET123')).toBe(
+        'https://example.com/asset.js'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?%76=5.3.0')).toBe(
+        'https://example.com/asset.js'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?v=SECRET%5FTOKEN')).toBe(
+        'https://example.com/asset.js'
+      );
+
+      // 6. Duplicate ver parameters containing both safe and unsafe values
+      const dupMixed = sanitizeResourceUrl('https://example.com/asset.js?ver=6.4.2&ver=SECRET_TOKEN');
+      expect(dupMixed).toContain('ver=6.4.2');
+      expect(dupMixed).not.toContain('SECRET_TOKEN');
+
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=SECRET1&ver=SECRET2')).toBe(
+        'https://example.com/asset.js'
+      );
+
+      const dupValid = sanitizeResourceUrl('https://example.com/asset.js?ver=6.4.2&ver=11.4.0');
+      expect(dupValid).toContain('ver=6.4.2');
+      expect(dupValid).toContain('ver=11.4.0');
+
+      // 7. Fallback parser on malformed URLs
+      const malformedDup = sanitizeResourceUrl('not-a-valid-url?ver=6.4.2&ver=SECRET_TOKEN');
+      expect(malformedDup).toContain('ver=6.4.2');
+      expect(malformedDup).not.toContain('SECRET_TOKEN');
+
+      expect(sanitizeResourceUrl('not-a-valid-url?v=5.3.0')).toBe('not-a-valid-url');
     });
   });
 
@@ -249,6 +351,60 @@ describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification'
           }
         }
       }
+    });
+
+    it('2.4. End-to-end verification: Unsafe ver and v values are stripped from evidence.source and evidence.matchedValue without corrupting version extraction', () => {
+      const wooSignals: HarvestedSignals = {
+        url: 'https://example-woo.com/shop?v=UNSAFE_PAGE_V',
+        meta: [],
+        dom: [{ selector: 'body.woocommerce' }],
+        resources: [
+          'https://example-woo.com/wp-content/plugins/woocommerce/assets/js/frontend/woocommerce.min.js?ver=11.4.0-dev.20261116&token=SECRET_TOKEN',
+          'https://example-woo.com/wp-content/themes/storefront/style.css?v=5.3.0&session_id=SECRET_SESSION',
+        ],
+        globals: {
+          woocommerce_params: {},
+        },
+      };
+
+      const result = evaluateSignals(wooSignals);
+      const woo = result.technologies.find((t) => t.id === 'woocommerce');
+      expect(woo).toBeDefined();
+      expect(woo?.version).toBe('11.4.0-dev.20261116');
+
+      const coreEv = woo?.evidence.find(
+        (e) => e.type === 'resource' && e.source.includes('woocommerce.min.js')
+      );
+      expect(coreEv).toBeDefined();
+      expect(coreEv?.source).toContain('ver=11.4.0-dev.20261116');
+      expect(coreEv?.source).not.toContain('SECRET_TOKEN');
+      expect(coreEv?.matchedValue).toBe(
+        'https://example-woo.com/wp-content/plugins/woocommerce/assets/js/frontend/woocommerce.min.js?ver=11.4.0-dev.20261116'
+      );
+      expect(coreEv?.matchedValue).not.toContain('SECRET_TOKEN');
+
+      // Unsafe ver in emoji script does not leak into evidence or corrupt version extraction
+      const unsafeWpSignals: HarvestedSignals = {
+        url: 'https://example-wp.com?ver=user_session_SECRET123',
+        meta: [],
+        dom: [],
+        resources: [
+          'https://example-wp.com/wp-includes/js/wp-emoji-release.min.js?ver=user_session_SECRET123',
+        ],
+        globals: {
+          wp: {},
+        },
+      };
+      const unsafeWpResult = evaluateSignals(unsafeWpSignals);
+      const unsafeWp = unsafeWpResult.technologies.find((t) => t.id === 'wordpress');
+      expect(unsafeWp).toBeDefined();
+      // Version must NOT be extracted as user_session_SECRET123
+      expect(unsafeWp?.version).toBeUndefined();
+
+      const unsafeEv = unsafeWp?.evidence.find((e) => e.type === 'resource');
+      expect(unsafeEv?.source).not.toContain('user_session_SECRET123');
+      expect(unsafeEv?.matchedValue).not.toContain('user_session_SECRET123');
+      expect(unsafeEv?.matchedValue).toBe('https://example-wp.com/wp-includes/js/wp-emoji-release.min.js');
     });
   });
 
@@ -516,6 +672,84 @@ describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification'
           ).toBe(false);
         }
       }
+    });
+
+    it('5.2. Phase 9.6.2: Proves unsafe ver and v parameters are completely absent from all 8 lifecycle phases', () => {
+      const unsafeUrl1 = 'https://example.com/asset.js?ver=user_session_SECRET123';
+      const unsafeUrl2 = 'https://example.com/style.css?v=account_private_identifier';
+      const safeUrl = 'https://example.com/react.js?ver=18.3.1';
+
+      // 1. Sanitized resource URLs
+      const san1 = sanitizeResourceUrl(unsafeUrl1);
+      const san2 = sanitizeResourceUrl(unsafeUrl2);
+      const sanSafe = sanitizeResourceUrl(safeUrl);
+      expect(san1).toBe('https://example.com/asset.js');
+      expect(san1).not.toContain('user_session_SECRET123');
+      expect(san2).toBe('https://example.com/style.css');
+      expect(san2).not.toContain('account_private_identifier');
+      expect(sanSafe).toBe('https://example.com/react.js?ver=18.3.1');
+
+      const signals: HarvestedSignals = {
+        url: 'https://example.com/page?ver=PAGE_VER_SECRET&v=PAGE_V_SECRET',
+        meta: [],
+        dom: [{ selector: '[data-reactroot]' }],
+        resources: [unsafeUrl1, unsafeUrl2, safeUrl],
+        globals: { React: { version: '18.3.1' } },
+      };
+
+      // 2. Evaluation / In-memory ScanResult
+      const scanResult = evaluateSignals(signals);
+
+      // Verify evidence.source and evidence.matchedValue
+      for (const t of scanResult.technologies) {
+        for (const e of t.evidence) {
+          if (e.type === 'resource') {
+            // 2. evidence.source
+            expect(e.source).not.toContain('user_session_SECRET123');
+            expect(e.source).not.toContain('account_private_identifier');
+            // 3. evidence.matchedValue
+            if (e.matchedValue) {
+              expect(e.matchedValue).not.toContain('user_session_SECRET123');
+              expect(e.matchedValue).not.toContain('account_private_identifier');
+            }
+          }
+        }
+      }
+
+      // 4. In-memory ScanResult stringified
+      const resultStr = JSON.stringify(scanResult);
+      expect(resultStr).not.toContain('user_session_SECRET123');
+      expect(resultStr).not.toContain('account_private_identifier');
+      expect(resultStr).not.toContain('PAGE_VER_SECRET');
+      expect(resultStr).not.toContain('PAGE_V_SECRET');
+
+      // 5. Chrome local storage (sanitizeScanResult)
+      const stored = sanitizeScanResult(scanResult);
+      const storedStr = JSON.stringify(stored);
+      expect(storedStr).not.toContain('user_session_SECRET123');
+      expect(storedStr).not.toContain('account_private_identifier');
+      expect(storedStr).not.toContain('PAGE_VER_SECRET');
+      expect(storedStr).not.toContain('PAGE_V_SECRET');
+
+      // 6. Single-scan JSON export
+      const jsonExport = formatExportJson(scanResult);
+      const jsonStr = JSON.stringify(jsonExport);
+      expect(jsonStr).not.toContain('user_session_SECRET123');
+      expect(jsonStr).not.toContain('account_private_identifier');
+      expect(jsonStr).not.toContain('PAGE_VER_SECRET');
+      expect(jsonStr).not.toContain('PAGE_V_SECRET');
+
+      // 7. Single-scan CSV export
+      const csvExport = formatExportCsv(scanResult);
+      expect(csvExport).not.toContain('user_session_SECRET123');
+      expect(csvExport).not.toContain('account_private_identifier');
+
+      // 8. Multi-scan CSV export
+      const multiCsv = formatMultiScanExportCsv([scanResult]);
+      expect(multiCsv).not.toContain('user_session_SECRET123');
+      expect(multiCsv).not.toContain('account_private_identifier');
+      expect(multiCsv).not.toContain('PAGE_VER_SECRET');
+      expect(multiCsv).not.toContain('PAGE_V_SECRET');
     });
   });
 });

@@ -81,6 +81,11 @@ const COMPOUND_SENSITIVE_PATTERN = /(?:^|[_-])(?:auth|token|secret|password|pass
 const PUBLIC_MEASUREMENT_ID_PATTERN = /^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+|UA-[0-9]+-[0-9]+)$/i;
 
 /**
+ * Known safe SemVer and release version pattern for software version query parameters (e.g. ver=6.4.2, ver=11.4.0-dev.20261116)
+ */
+export const SAFE_VERSION_PATTERN = /^[0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?$/;
+
+/**
  * Determines whether a query parameter key (and optional value) is sensitive, a tracking identifier,
  * or an arbitrary non-measurement identifier.
  */
@@ -119,6 +124,26 @@ export function isSensitiveQueryParam(rawKey: string, rawVal?: string): boolean 
     }
     if (!PUBLIC_MEASUREMENT_ID_PATTERN.test(decodedVal)) {
       return true; // Strip arbitrary non-measurement IDs
+    }
+  }
+
+  // 5. Version parameter hardening:
+  // 'v' is stripped because no supported production detection rule relies on it
+  if (key === 'v') {
+    return true;
+  }
+
+  // 'ver' is strictly validated against SemVer/numeric release pattern (e.g. 6.4.2, 11.4.0-dev.20261116)
+  if (key === 'ver') {
+    if (!rawVal || typeof rawVal !== 'string') return true;
+    let decodedVal = rawVal.trim();
+    try {
+      decodedVal = decodeURIComponent(decodedVal);
+    } catch {
+      // Keep trimmed value
+    }
+    if (!SAFE_VERSION_PATTERN.test(decodedVal)) {
+      return true; // Strip unvalidated or non-version values
     }
   }
 

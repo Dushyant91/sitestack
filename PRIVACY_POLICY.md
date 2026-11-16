@@ -13,7 +13,7 @@
 
 SiteStack does not collect, track, transmit, monetize, sell, or share any personal information, browsing history, form inputs, session data, or scan results. All profiling, signal harvesting, detection evaluation, history caching, and export generation occur **100% locally within your browser's private sandbox**.
 
-This policy has been audited and verified against the actual production source code at Git commit `8c7056f` and Phase 9.6 verification.
+This policy has been audited and verified against the actual production source code at Git commit `79c3771` and Phase 9.6.2 privacy hardening.
 
 ---
 
@@ -98,7 +98,12 @@ To prevent accidental retention or leakage of sensitive data in URLs and diagnos
 - **Hash Fragments Stripped:** All `#...` URL fragments (which may contain client-side routing tokens, authentication tokens, or state payloads) are stripped.
 
 ### Safe Version Parameter Preservation & Measurement Allowlist
-- **Software Version Parameters Preserved:** Query parameters `ver` (e.g. `wp-emoji-release.min.js?ver=6.4.2`, `woocommerce.min.js?ver=7.1.4`) and `v` (e.g. `bootstrap.min.css?v=5.3.0`) are preserved because they are technically required for accurate semantic version extraction across CMS platforms and component libraries.
+- **Strictly Validated Version Parameter (`ver`):** The query parameter `ver` is preserved **only** when its decoded value strictly matches the standard SemVer / numeric release pattern:
+  ```text
+  /^[0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?$/
+  ```
+  Valid versions required by production rules (e.g. `wp-emoji-release.min.js?ver=6.4.2`, `woocommerce.min.js?ver=11.4.0-dev.20261116`, `jquery.min.js?ver=3.7.1`) are safely preserved. Any arbitrary, non-version, token-like, or session-like string (e.g. `?ver=user_session_SECRET123`, `?ver=token_ABC123`, `?ver=account_private_identifier`) fails pattern validation and is permanently stripped.
+- **Unvalidated `v` Parameter Stripping:** Query parameter `v` is stripped unconditionally. A comprehensive codebase audit confirmed that zero supported production detection rules rely on `v` for version extraction (Bootstrap extracts versions from runtime globals or pathname structures). To eliminate unnecessary data leakage surfaces, `v` is never preserved.
 - **Strictly Bounded Measurement Identifier Allowlist:** The query parameters `id` and `tid` are preserved **only** when their value conforms strictly to public analytics and container formats matching `/^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+|UA-[0-9]+-[0-9]+)$/i` (such as `googletagmanager.com/gtm.js?id=GTM-XXXXXXX` or `google-analytics.com/g/collect?tid=G-XXXXXXXXXX`). Generic or arbitrary user, account, or transaction identifiers (e.g. `?id=user123` or `?tid=txn_999`) fail this pattern match and are automatically stripped as sensitive.
 
 ---

@@ -115,8 +115,8 @@ describe('Phase 8.3: Multi-Scan CSV Empty Scan Representation Suite', () => {
     const emptyRow = lines[1];
 
     const expectedDate = new Date(emptyScanYouTube.timestamp).toISOString();
-    // Normalized URL has utm_source stripped
-    const expectedUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    // Normalized URL has utm_source and unvalidated parameter v stripped
+    const expectedUrl = 'https://www.youtube.com/watch';
 
     expect(emptyRow).toBe(
       `"youtube.com","${expectedDate}","${expectedUrl}","","","","","","","","","",""`
@@ -217,7 +217,7 @@ describe('Phase 8.3: Multi-Scan CSV Empty Scan Representation Suite', () => {
     // YouTube empty scan
     expect(multiJson.scans[1].scannedWebsite).toBe('youtube.com');
     expect(multiJson.scans[1].technologies).toEqual([]);
-    expect(multiJson.scans[1].url).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    expect(multiJson.scans[1].url).toBe('https://www.youtube.com/watch');
 
     // Shopify scan
     expect(multiJson.scans[2].scannedWebsite).toBe('shopify.com');

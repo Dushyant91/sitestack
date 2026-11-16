@@ -3,10 +3,10 @@
 ## Version 1.0.0 (Release Candidate 1)
 
 **Release Date:** November 16, 2026  
-**Git Commit Checkpoint:** [`8c7056f`](file:///D:/SiteStack) (Phases 9.5 & 9.6 Verified)  
+**Git Commit Checkpoint:** Post-Phase 9.6.2 Privacy Hardening  
 **Target Platform:** Google Chrome & Chromium-based Browsers (Manifest V3)  
 **Distribution Build Directory:** [`D:\SiteStack\dist`](file:///D:/SiteStack/dist)  
-**Automated Test Suite:** 307 passing tests across 21 test suites (100% passing)  
+**Automated Test Suite:** 310 passing tests across 21 test suites (100% passing)  
 **TypeScript Compilation:** Zero errors (`tsc -b`)
 
 ---
@@ -73,7 +73,9 @@ Comprehensive detection across the modern web stack:
   - Strips session IDs and user identifiers (`session`, `session_id`, `sid`, `user_id`).
   - Strips marketing and ad trackers (`utm_*`, `fbclid`, `gclid`).
   - Strips URL hash fragments (`#...`).
-  - Preserves software version parameters (`ver`, `v`) and strictly validated public measurement tags (`GTM-*`, `G-*`, `UA-*`) required for version extraction.
+  - Preserves software version parameter `ver` only when strictly matching `SAFE_VERSION_PATTERN` (`/^[0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?$/`); strips unvalidated, token-like, or session-like values.
+  - Strips query parameter `v` unconditionally because zero supported production rules require it.
+  - Preserves strictly validated public measurement tags (`GTM-*`, `G-*`, `UA-*`) required for version extraction.
   - Strips arbitrary user/account IDs in `id` and `tid`.
 - **Automatic legacy history migration:** Old unsanitized records in `chrome.storage.local` are automatically sanitized on read and immediately persisted back to storage.
 
@@ -117,22 +119,23 @@ Comprehensive detection across the modern web stack:
   - Verified zero remote network transmission and zero remote code.
   - Phase 9.5: Implemented critical evidence URL privacy remediation (`src/shared/url.ts`) across evaluation, history, and exports.
   - Phase 9.6: Hardened query parameter allowlist (`id`/`tid` restricted strictly to public measurement containers `/^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+|UA-[0-9]+-[0-9]+)$/i`), implemented legacy history writeback persistence, verified zero leakage across all 6 evidence classes, and updated all documentation.
+  - Phase 9.6.2: Version parameter privacy hardening: implemented `SAFE_VERSION_PATTERN` validation on `ver`, unconditionally stripped unneeded `v` parameter, verified zero leakage across all 8 evidence lifecycle phases, and added regression tests.
 
 ---
 
 ## Verification & Build Statistics
 
 - **Total Test Files:** 21 passing
-- **Total Unit & Regression Tests:** 307 passing
+- **Total Unit & Regression Tests:** 310 passing
 - **TypeScript Errors:** 0
 - **Production Build Artifacts:**
   - `dist/service-worker.js`: 26.07 kB (gzip: 8.23 kB)
-  - `dist/assets/popup-D8Sx9p9u.js`: 195.39 kB (gzip: 58.51 kB)
+  - `dist/assets/popup-DeSge8LG.js`: 195.39 kB (gzip: 58.51 kB)
   - `dist/assets/popup-BL95HZOP.css`: 25.51 kB (gzip: 5.52 kB)
-  - `dist/assets/history-BvEk7ayV.js`: 7.12 kB (gzip: 2.67 kB)
+  - `dist/assets/history-gB2tStFH.js`: 7.31 kB (gzip: 2.71 kB)
   - `dist/isolated-probe.js`: 3.35 kB (gzip: 1.59 kB)
   - `dist/main-probe.js`: 1.79 kB (gzip: 0.83 kB)
-  - `dist/popup/index.html`: 0.85 kB (gzip: 0.50 kB)
+  - `dist/popup/index.html`: 0.85 kB (gzip: 0.49 kB)
 - **Total Gzip Bundle Size:** ~77.8 kB
 - **Remote Network Dependencies:** 0
 
