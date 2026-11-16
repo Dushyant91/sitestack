@@ -7,6 +7,7 @@
 **Target Platform:** Google Chrome & Chromium-based Browsers (Manifest V3)  
 **Browser Compatibility Statement:** "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."  
 **Distribution Build Directory:** [`D:\SiteStack\dist`](file:///D:/SiteStack/dist)  
+**Beta Package Archive:** [`D:\SiteStack\release\sitestack-v1.0.0-beta.zip`](file:///D:/SiteStack/release/sitestack-v1.0.0-beta.zip) (82.5 kB, clean unpacked runtime bundle)  
 **Automated Test Suite:** 340 passing tests across 24 test suites (100% passing)  
 **TypeScript Compilation:** Zero errors (`tsc -b`)
 
@@ -132,14 +133,15 @@ Comprehensive detection across the modern web stack:
 - **TypeScript Errors:** 0
 - **Browser Compatibility Statement:** "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."
 - **Production Build Artifacts:**
-  - `dist/service-worker.js`: 26.07 kB (gzip: 8.23 kB)
-  - `dist/assets/popup-DeSge8LG.js`: 195.39 kB (gzip: 58.51 kB)
-  - `dist/assets/popup-BL95HZOP.css`: 25.51 kB (gzip: 5.52 kB)
-  - `dist/assets/history-gB2tStFH.js`: 7.31 kB (gzip: 2.71 kB)
-  - `dist/isolated-probe.js`: 3.35 kB (gzip: 1.59 kB)
+  - `dist/popup/index.html`: 0.85 kB (gzip: 0.50 kB)
+  - `dist/assets/popup-B_If2MnA.css`: 26.60 kB (gzip: 5.66 kB)
   - `dist/main-probe.js`: 1.79 kB (gzip: 0.83 kB)
-  - `dist/popup/index.html`: 0.85 kB (gzip: 0.49 kB)
-- **Total Gzip Bundle Size:** ~77.8 kB
+  - `dist/isolated-probe.js`: 4.21 kB (gzip: 1.87 kB)
+  - `dist/assets/history-D_sI32Mh.js`: 9.75 kB (gzip: 3.38 kB)
+  - `dist/service-worker.js`: 28.01 kB (gzip: 8.78 kB)
+  - `dist/assets/popup-BdKBLV3u.js`: 200.21 kB (gzip: 59.65 kB)
+- **Beta Distribution Package:** `release/sitestack-v1.0.0-beta.zip` (82.5 kB compressed, 12 production runtime assets)
+- **Total Gzip Bundle Size:** ~80.7 kB
 - **Remote Network Dependencies:** 0
 
 ---

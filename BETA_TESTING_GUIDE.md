@@ -23,8 +23,8 @@ As a beta tester, your primary mission is to evaluate detection accuracy across 
 ## 2. Installation & Setup
 
 ### Prerequisites
-- **Browser:** Google Chrome (v110 or newer), Brave, Microsoft Edge, Opera, or Chrome Canary.
-- **Build Package:** The precompiled production build located at `D:\SiteStack\dist`.
+- **Supported Browsers:** Google Chrome (v110 or newer), Brave Browser (Chromium engine), Microsoft Edge, or any Chromium-based browser supporting Manifest V3.
+- **Distribution Package:** Either extract the release ZIP archive (`release/sitestack-v1.0.0-beta.zip`) or use the precompiled production build located at `D:\SiteStack\dist`.
 
 ### Step-by-Step Installation
 1. Launch **Google Chrome** or **Brave Browser**.
@@ -33,10 +33,9 @@ As a beta tester, your primary mission is to evaluate detection accuracy across 
    - For Brave Browser: `brave://extensions/`
 3. Enable **Developer mode** using the toggle switch located in the upper-right corner of the page.
 4. Click the **Load unpacked** button in the top-left toolbar.
-5. In the file picker dialog, navigate to and select the build directory:
-   ```text
-   D:\SiteStack\dist
-   ```
+5. In the file picker dialog, select the extension directory:
+   - Extracted beta package folder (from `sitestack-v1.0.0-beta.zip`), OR
+   - The build directory: `D:\SiteStack\dist`
 6. **Verify Installation:**
    - Confirm that the extension card appears as **SiteStack — Technology Stack Profiler** (version `1.0.0`).
    - Check that no manifest errors or warnings are displayed on the extension card.
@@ -44,7 +43,26 @@ As a beta tester, your primary mission is to evaluate detection accuracy across 
 
 ---
 
-## 3. Supported Technologies Catalog (24 Technologies Across 8 Categories)
+## 3. How to Scan a Website & User-Triggered Operation
+
+SiteStack strictly enforces an on-demand, privacy-first scanning model:
+
+1. **Unscanned Tab Zero-State ("Ready to Scan"):**
+   - When you switch to a new tab and open SiteStack, the popup displays **Ready to Scan** with a Sparkles icon, the active tab's domain, and a primary **Scan Website** button.
+   - SiteStack **never** performs silent background scans, network pings, or automatic script injections before you click.
+2. **Executing an On-Demand Scan:**
+   - Click the **Scan Website** button (or the **Scan** action in the header).
+   - The radar animation will activate while isolated and main-world probes harvest in-memory DOM selectors, window globals, and ResourceTiming assets.
+   - Results render in milliseconds (<5ms engine time).
+3. **Tab Isolation & Stale Result Prevention:**
+   - Each tab retains its own scan result independently. Switching between tabs renders each tab's own results without cross-tab contamination.
+   - If you reload the active tab (F5) or navigate to a new URL, SiteStack immediately invalidates prior results and resets the popup to **Ready to Scan**.
+4. **Re-scanning:**
+   - To force a fresh inspection of an already scanned page, click the **Re-scan** button in the popup header.
+
+---
+
+## 4. Supported Technologies Catalog (24 Technologies Across 8 Categories)
 
 SiteStack is calibrated for high-precision detection of 24 core technologies:
 
@@ -77,7 +95,7 @@ SiteStack is calibrated for high-precision detection of 24 core technologies:
 
 ---
 
-## 4. Understanding Confidence Scores & Tiers
+## 5. Understanding Confidence Scores & Tiers
 
 SiteStack uses a mathematical multi-class scoring algorithm rather than guessing. When testing, verify that confidence ratings match these definitions:
 
@@ -107,7 +125,7 @@ Pay special attention to infrastructure detections:
 
 ---
 
-## 5. Version Extraction & Maturity Badges
+## 6. Version Extraction & Maturity Badges
 
 When a technology is detected, SiteStack attempts to extract its exact version:
 - **Where versions originate:**
@@ -127,24 +145,24 @@ When a technology is detected, SiteStack attempts to extract its exact version:
 
 ---
 
-## 6. Known Limitations & Expected Behaviors
+## 7. Known Limitations & Expected Behaviors
 
 During beta testing, keep these expected technical constraints in mind:
 
 1. **Manifest V3 HTTP Response Header Restriction:**
    Chrome Manifest V3 content scripts cannot inspect document-level HTTP response headers (such as `Server: Vercel` or `CF-Ray: ...`) without broad `webRequest` or host permissions (`<all_urls>`). To preserve user privacy, SiteStack avoids these invasive permissions. Cloud hosting is therefore evaluated using browser-visible client assets and intentionally kept conservative.
-2. **Browser System Pages (`chrome://`, `about:blank`, Chrome Web Store):**
-   Chrome security policy strictly forbids extension script injection on internal browser pages. When opened on such pages, SiteStack displays a clean notice: *"Browser internal and system pages cannot be analyzed by extension security policy."*
+2. **Browser System Pages (`chrome://`, `brave://`, `about:blank`, Chrome Web Store):**
+   Browser security policies strictly forbid extension script injection on internal pages. When opened on such pages, SiteStack safely displays an error state without crashing: *"No active browser tab found to inspect."* (under `Scan Failed`) with a `Retry Inspection` button.
 3. **Delayed Dynamic Hydration (SPAs):**
    On heavy single-page applications that load asynchronously, clicking SiteStack before initial JavaScript execution finishes might result in a partial scan. Rescanning after page hydration resolves this.
 4. **React DevTools Browser Extension:**
    If you have the official React Developer Tools Chrome extension installed, it injects `window.__REACT_DEVTOOLS_GLOBAL_HOOK__` into **every** website you visit (including non-React sites like Amazon.in). SiteStack rates this signal at weight 25 (< 30 threshold) so it will **never** trigger a false React detection on non-React sites.
 5. **Evidence URL Privacy Sanitization:**
-   When inspecting the Evidence Drawer or exported JSON/CSV files, you will notice that sensitive query parameters (such as `token`, `session_id`, `auth`, `key`, `secret`, `utm_*`, `gclid`, `fbclid`) and URL hash fragments are permanently stripped from both the scanned website URL and individual resource asset URLs. Validated software version query parameters (`?ver=6.4.2`, `?ver=11.4.0-dev.20261116`, `?ver=7.2-beta5-65440`, `?ver=6.5-RC1`) matching bounded version grammar and validated public measurement tags (`?id=GTM-XXXXXXX`, `?tid=G-XXXXXXXXXX`) are preserved because they are required for semantic version extraction and container identification. The query parameter `v` is stripped unconditionally because zero supported production rules require it. Arbitrary user, account, token, session, or adversarial suffix identifiers (e.g. `?ver=user_session_SECRET123`, `?ver=1.2-dev-session123`, `?v=account_private_identifier`, `?id=user123`, `?tid=txn_999`) fail strict validation patterns and are permanently stripped.
+   When inspecting the Evidence Drawer or exported JSON/CSV files, sensitive query parameters (such as `token`, `session_id`, `auth`, `key`, `secret`, `utm_*`, `gclid`, `fbclid`) and URL hash fragments are permanently stripped from both the scanned website URL and individual resource asset URLs. Validated software version query parameters (`?ver=6.4.2`, `?ver=11.4.0-dev.20261116`, `?ver=7.2-beta5-65440`, `?ver=6.5-RC1`) matching bounded version grammar and validated public measurement tags (`?id=GTM-XXXXXXX`, `?tid=G-XXXXXXXXXX`) are preserved because they are required for semantic version extraction and container identification. The query parameter `v` is stripped unconditionally because zero supported production rules require it. Arbitrary user, account, token, session, or adversarial suffix identifiers (e.g. `?ver=user_session_SECRET123`, `?ver=1.2-dev-session123`, `?v=account_private_identifier`, `?id=user123`, `?tid=txn_999`) fail strict validation patterns and are permanently stripped.
 
 ---
 
-## 7. How to Test & Reporting Guidelines
+## 8. How to Test & Export Verification
 
 We ask beta testers to evaluate three core scenarios:
 
@@ -158,22 +176,22 @@ Scan a variety of top websites across different stacks:
 ### Scenario B: Evidence & Export Verification
 - Click on technology cards to expand the **Evidence Drawer**. Check that matched values and weights make sense.
 - Test single-scan exports (**Download JSON** and **Download CSV**).
-- Open the **History** modal, verify recent scans are saved, and test **Export All (CSV)**.
-- Verify that scans with zero detections emit a single clean row in CSV exports.
+- Open the **History** modal, verify recent scans are saved, and test **Export Selected (CSV)** and **Export Selected (JSON)**.
+- Verify that scans with zero detections emit a single clean row in CSV exports with 10 empty technology fields.
 
 ---
 
-## 8. Defect Reporting Instructions
+## 9. Defect Reporting Instructions & Feedback Submission
 
-If you encounter an issue, please use our standardized reporting templates from [BETA_FEEDBACK_TEMPLATE.md](file:///D:/SiteStack/BETA_FEEDBACK_TEMPLATE.md):
+If you encounter an issue or wish to share feedback, please use the standardized templates in [BETA_FEEDBACK_TEMPLATE.md](file:///D:/SiteStack/BETA_FEEDBACK_TEMPLATE.md):
 
-1. **False-Positive Report (Over-Detection):**
-   Use Template 1 if SiteStack reports a technology that the website does not actually use.
-2. **Missing-Detection Report (Under-Detection):**
-   Use Template 2 if a website clearly uses one of our 24 supported technologies, but SiteStack failed to detect it.
-3. **Version Extraction / Maturity Issue:**
-   Use Template 3 if an extracted version is incorrect, truncated, or miscategorized.
-4. **UI / Layout / Usability Bug:**
-   Use Template 4 if the popup displays broken layouts, truncated text, or unresponsive buttons.
+1. **False-Positive Report (Over-Detection):** Use Template 1 if SiteStack reports a technology that the website does not actually use.
+2. **Missing-Detection Report (Under-Detection):** Use Template 2 if a website clearly uses one of our 24 supported technologies, but SiteStack failed to detect it.
+3. **Version Extraction / Maturity Issue:** Use Template 3 if an extracted version is incorrect, truncated, or miscategorized.
+4. **UI / Layout / Usability Bug:** Use Template 4 if the popup displays broken layouts, truncated text, or unresponsive buttons.
+5. **General Usability Impressions:** Use Template 5 to share qualitative impressions and feature suggestions.
 
-Submit all completed reports using [BETA_FEEDBACK_TEMPLATE.md](file:///D:/SiteStack/BETA_FEEDBACK_TEMPLATE.md). For formal verification rounds, use the [MANUAL_VALIDATION_RESULTS_TEMPLATE.md](file:///D:/SiteStack/MANUAL_VALIDATION_RESULTS_TEMPLATE.md).
+### Where to Submit Feedback
+- **GitHub Repository Issues:** Open an issue in the project repository copying the matching template.
+- **Direct Beta Coordinator Email:** Send your completed feedback template to `dsharma09012003@gmail.com` with the subject line format:  
+  `[SiteStack Beta] <Template Name> — <Target Website or Topic>`

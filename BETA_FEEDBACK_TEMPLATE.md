@@ -1,8 +1,12 @@
 # SiteStack — Beta Feedback & Issue Reporting Templates
 
-This document contains standardized templates for reporting issues, anomalies, false positives, and missing detections discovered during SiteStack beta testing.
+This document contains standardized templates for reporting issues, anomalies, false positives, missing detections, or usability impressions discovered during SiteStack beta testing.
 
-Please copy the appropriate template below, fill in the required fields, and submit your report to the SiteStack development team.
+### How & Where to Submit Beta Feedback
+1. **GitHub Issues (Preferred):** Open an issue in the project repository and paste the filled template.
+2. **Beta Coordinator Email:** Email your report to `dsharma09012003@gmail.com` with the subject line:  
+   `[SiteStack Beta] <Template Type> — <Website URL or Feature>`
+3. **Supported Browsers:** Please specify whether the issue was observed in **Google Chrome** or **Brave Browser** (and note Brave Shields status if relevant).
 
 ---
 
@@ -16,7 +20,8 @@ Use this template when SiteStack detects a technology that is **not actually use
 **1. Environment Information:**
 - Target Website URL: https://example.com/page
 - SiteStack Version: 1.0.0 (RC1)
-- Chrome Version: (e.g. Chrome 131.0.6778.86 64-bit)
+- Browser: [ ] Google Chrome (version)  [ ] Brave Browser (version)  [ ] Other Chromium
+- Brave Shields Status (if Brave): [ ] Enabled (Default)  [ ] Disabled
 - Operating System: (e.g. Windows 11, macOS Sequoia, Ubuntu 24.04)
 - Browser Profile: [ ] Clean Profile  [ ] Profile with React DevTools / Other Extensions
 
@@ -57,7 +62,8 @@ Use this template when a website is **known to use** one of SiteStack's 24 suppo
 **1. Environment Information:**
 - Target Website URL: https://example.com/page
 - SiteStack Version: 1.0.0 (RC1)
-- Chrome Version: (e.g. Chrome 131.0.6778.86)
+- Browser: [ ] Google Chrome (version)  [ ] Brave Browser (version)  [ ] Other Chromium
+- Brave Shields Status (if Brave): [ ] Enabled (Default)  [ ] Disabled
 - Operating System: (e.g. Windows 11, macOS Sequoia)
 
 **2. Missing Technology Details:**
@@ -100,7 +106,8 @@ Use this template when a technology was detected correctly, but its **version st
 **1. Environment Information:**
 - Target Website URL: https://example.com/page
 - SiteStack Version: 1.0.0 (RC1)
-- Chrome Version & OS:
+- Browser: [ ] Google Chrome (version)  [ ] Brave Browser (version)  [ ] Other Chromium
+- Operating System: (e.g. Windows 11, macOS Sequoia)
 
 **2. Version Discrepancy:**
 - Detected Technology: (e.g. WooCommerce, Bootstrap, jQuery, WordPress)
@@ -134,7 +141,7 @@ Use this template for bugs in the popup interface, search bar, history view, or 
 
 **1. Environment Information:**
 - SiteStack Version: 1.0.0 (RC1)
-- Chrome Version:
+- Browser: [ ] Google Chrome (version)  [ ] Brave Browser (version)  [ ] Other Chromium
 - Operating System & Display Scaling: (e.g. Windows 11 at 125% DPI scale, macOS Retina)
 
 **2. Component Affected:**
@@ -177,20 +184,21 @@ Use this template to share qualitative thoughts, performance notes, feature sugg
 
 **1. Tester Name / Handle:**
 **2. Date:**
-**3. Chrome Version & OS:**
+**3. Browser & Version:** (e.g. Chrome 131.0.6778.86 / Brave 1.73.x)
+**4. Operating System:** (e.g. Windows 11)
 
-**4. Overall Experience Rating:**
+**5. Overall Experience Rating:**
 [ ] Excellent  [ ] Good  [ ] Needs Polish  [ ] Poor
 
-**5. What Worked Well:**
+**6. What Worked Well:**
 - ...
 - ...
 
-**6. Areas for Improvement / Friction Points:**
+**7. Areas for Improvement / Friction Points:**
 - ...
 - ...
 
-**7. Specific Feature Suggestions:**
+**8. Specific Feature Suggestions:**
 - ...
 - ...
 ```
