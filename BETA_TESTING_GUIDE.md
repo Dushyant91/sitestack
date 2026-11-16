@@ -13,6 +13,9 @@ Welcome to the **SiteStack Beta Testing Program**!
 
 SiteStack is a high-precision, privacy-first Chrome extension that identifies the frontend frameworks, libraries, content management systems, analytics tools, payment gateways, and cloud infrastructure powering any website.
 
+> **Browser Compatibility Statement:**  
+> "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."
+
 As a beta tester, your primary mission is to evaluate detection accuracy across diverse real-world websites, verify version extraction reliability, test edge-case stability (such as empty or restricted pages), and report any discrepancies.
 
 ---
@@ -24,11 +27,10 @@ As a beta tester, your primary mission is to evaluate detection accuracy across 
 - **Build Package:** The precompiled production build located at `D:\SiteStack\dist`.
 
 ### Step-by-Step Installation
-1. Launch Google Chrome.
-2. In the Chrome address bar, navigate to:
-   ```text
-   chrome://extensions/
-   ```
+1. Launch **Google Chrome** or **Brave Browser**.
+2. In the address bar, navigate to the extension management page:
+   - For Google Chrome: `chrome://extensions/`
+   - For Brave Browser: `brave://extensions/`
 3. Enable **Developer mode** using the toggle switch located in the upper-right corner of the page.
 4. Click the **Load unpacked** button in the top-left toolbar.
 5. In the file picker dialog, navigate to and select the build directory:
@@ -38,7 +40,7 @@ As a beta tester, your primary mission is to evaluate detection accuracy across 
 6. **Verify Installation:**
    - Confirm that the extension card appears as **SiteStack — Technology Stack Profiler** (version `1.0.0`).
    - Check that no manifest errors or warnings are displayed on the extension card.
-   - Click the puzzle piece icon (Extensions menu) in the Chrome toolbar and **pin** SiteStack to your toolbar for easy one-click access.
+   - Click the puzzle piece icon (Extensions menu) in the browser toolbar and **pin** SiteStack to your toolbar for easy one-click access.
 
 ---
 

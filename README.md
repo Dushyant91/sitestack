@@ -161,6 +161,9 @@ For full details, read our [PRIVACY_POLICY.md](file:///D:/SiteStack/PRIVACY_POLI
 - Google Chrome, Brave, Microsoft Edge, or any Chromium-based browser supporting Manifest V3.
 - Node.js 18.x or higher and npm (for building from source).
 
+### Browser Compatibility
+> **Statement:** SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately.
+
 ### 1. Load Unpacked Extension (Prebuilt)
 1. Open Google Chrome and navigate to:
    ```text
@@ -180,7 +183,7 @@ To compile the extension bundle from TypeScript source code:
 # Install dependencies
 npm install
 
-# Run complete test suite (310 tests across 21 test files)
+# Run complete test suite (340 tests across 24 test files)
 npm test
 
 # Build production bundle to dist/

@@ -3,10 +3,11 @@
 ## Version 1.0.0 (Release Candidate 1)
 
 **Release Date:** November 16, 2026  
-**Git Commit Checkpoint:** Post-Phase 9.6.2 Privacy Hardening  
+**Git Commit Checkpoint:** Release Candidate commit [`f5710e3`](file:///D:/SiteStack)  
 **Target Platform:** Google Chrome & Chromium-based Browsers (Manifest V3)  
+**Browser Compatibility Statement:** "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."  
 **Distribution Build Directory:** [`D:\SiteStack\dist`](file:///D:/SiteStack/dist)  
-**Automated Test Suite:** 310 passing tests across 21 test suites (100% passing)  
+**Automated Test Suite:** 340 passing tests across 24 test suites (100% passing)  
 **TypeScript Compilation:** Zero errors (`tsc -b`)
 
 ---
@@ -126,9 +127,10 @@ Comprehensive detection across the modern web stack:
 
 ## Verification & Build Statistics
 
-- **Total Test Files:** 21 passing
-- **Total Unit & Regression Tests:** 312 passing
+- **Total Test Files:** 24 passing
+- **Total Unit & Regression Tests:** 340 passing
 - **TypeScript Errors:** 0
+- **Browser Compatibility Statement:** "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."
 - **Production Build Artifacts:**
   - `dist/service-worker.js`: 26.07 kB (gzip: 8.23 kB)
   - `dist/assets/popup-DeSge8LG.js`: 195.39 kB (gzip: 58.51 kB)

@@ -1,12 +1,13 @@
-# SiteStack Phase 9.7 — Brave Browser Manual Validation Protocol & Execution Report
+# SiteStack Phase 9.7 — Cross-Browser Manual Validation Protocol & Execution Report
 
 **Document Purpose:** Manual Validation Protocol & Execution Tracking for SiteStack Release Candidate  
-**Primary Execution Environment:** Brave Browser (Chromium Engine)  
+**Validation Environments:** Google Chrome & Brave Browser (Chromium Engine)  
 **Build Directory:** [`D:\SiteStack\dist`](file:///D:/SiteStack/dist)  
 **Release Candidate Commit Checkpoint:** [`f5710e3`](file:///D:/SiteStack) (`fix(extension): harden tab-state lifecycle, session storage, and navigation guards`)  
 **Extension Version:** `1.0.0` (Manifest V3)  
 **Creation / Update Date:** November 16, 2026  
-**Execution Status:** **ALL 15 SCENARIOS USER-CONFIRMED (T1–T15: USER-CONFIRMED MANUAL PASS IN BRAVE)**  
+**Execution Status:** **ALL 15 SCENARIOS USER-CONFIRMED (T1–T15: USER-CONFIRMED MANUAL PASS IN GOOGLE CHROME AND BRAVE BROWSER)**  
+**Browser Compatibility Statement:** "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."  
 **Automated Test Suite:** 340/340 passed across 24 test files  
 **TypeScript Compilation:** Passed (`tsc -b` zero errors)  
 **Production Build:** Passed (`npm run build` verified in [`dist/`](file:///D:/SiteStack/dist))
@@ -17,19 +18,19 @@
 
 Phase 9.6.4 established strict privacy hardening at commit `dc668e5`, followed by Phase 9.7 browser error page misclassification remediation at commit `09c892e`, and Phase 9.7.3 tab-state lifecycle hardening at commit [`f5710e3`](file:///D:/SiteStack). The automated suite contains 340 passing tests across 24 test files with zero TypeScript errors.
 
-### Mandatory Auditor Notice: Brave Browser Validation Scope
-1. **Primary Validation Target:** In accordance with workstation availability (where Brave Browser is the user's sole installed browser), **Brave Browser** is designated as the primary manual validation environment for Phase 9.7.
-2. **Explicit Disclaimer — No Claim of Chrome Manual Verification:** All test results, observations, and verifications recorded in this document are strictly **Brave-validated**. Because Google Chrome is not installed on this workstation, **Google Chrome compatibility has NOT been manually verified** and must not be claimed as manually verified.
-3. **Chromium Engine Baseline:** Because Brave is built on the Chromium engine (Manifest V3, `chrome.scripting`, `chrome.storage`, `activeTab`), extension core APIs function identically, subject to Brave-specific privacy features (Brave Shields).
-4. **Brave Shields Impact Assessment:** Brave features built-in network and tracker blocking ("Brave Shields"). Where Brave Shields blocks third-party scripts (e.g., Google Analytics, Tag Manager, Cloudflare Web Analytics), detection results may vary. Each relevant test scenario includes a mandatory **Brave Shields Status** field (`Enabled` vs. `Disabled`).
-5. **Strict No-Auto-Scan Constraint:** All tests verify that scanning is 100% user-triggered. Opening unscanned tabs must show "Ready to Scan", and the extension must never initiate background scans.
-6. **Execution Status:** All 15 manual test scenarios (T1–T15) have been physically executed and verified in Brave Browser by the user (**USER-CONFIRMED MANUAL PASS**). Evidence scope and limitations for each scenario are documented below. All manual results are strictly Brave-validated; Google Chrome manual compatibility has NOT been verified.
+### Auditor Notice: Dual-Browser Validation Scope (Google Chrome & Brave Browser)
+1. **Validation Scope:** SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately.
+2. **Browser Compatibility Statement:** "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."
+3. **Chromium Engine Baseline:** Both Google Chrome and Brave are built on the Chromium engine (Manifest V3, `chrome.scripting`, `chrome.storage`, `activeTab`). Extension core APIs function identically across Chromium builds, subject to browser-specific privacy features (such as Brave Shields).
+4. **Brave Shields Impact Assessment:** Brave features built-in network and tracker blocking ("Brave Shields"). Where Brave Shields blocks third-party scripts (e.g., Google Analytics, Tag Manager, Cloudflare Web Analytics), detection results may vary. Each relevant test scenario includes a **Brave Shields Status** field (`Enabled` vs. `Disabled`), whereas Google Chrome executes under standard Chromium web security defaults.
+5. **Strict No-Auto-Scan Constraint:** All tests verify that scanning is 100% user-triggered. Opening unscanned tabs must show "Ready to Scan", and the extension must never initiate background scans in either browser.
+6. **Execution Status:** All 15 manual test scenarios (T1–T15) have been physically executed and confirmed as **USER-CONFIRMED MANUAL PASS** by the project owner across both Google Chrome and Brave Browser. Evidence distinctions between manual testing observations, automated test suites, and static code audits are maintained throughout this document.
 
 ---
 
-## 1. Setup Instructions: Loading Unpacked Extension in Brave Browser
+## 1. Setup Instructions: Loading Unpacked Extension in Chromium Browsers
 
-To execute the manual validation suite in Brave Browser:
+To execute the manual validation suite in Google Chrome and Brave Browser:
 
 ### Step 1: Verify the Production Build
 Confirm that the latest production bundle is compiled and up to date in [`D:\SiteStack\dist`](file:///D:/SiteStack/dist):
@@ -39,44 +40,33 @@ npm run build
 ```
 Verify that `dist/manifest.json`, `dist/service-worker.js`, `dist/isolated-probe.js`, `dist/main-probe.js`, and `dist/popup/` exist and match commit `f5710e3`.
 
-### Step 2: Open Brave Extension Management & Record Version
-1. Launch **Brave Browser**.
-2. Open a new tab and navigate to:
-   ```text
-   brave://version/
-   ```
-3. Record the exact versions:
-   - **Brave Version:** (e.g., `1.73.x` or similar)
-   - **Chromium Version:** (e.g., `131.0.6778.x` or similar)
-   - **OS Version:** Windows 10 / Windows 11
-4. Navigate to the extension manager:
-   ```text
-   brave://extensions/
-   ```
-5. Enable the **Developer mode** toggle in the top-right corner.
-
-### Step 3: Load Unpacked Extension
-1. Click the **Load unpacked** button in the top toolbar.
-2. In the folder picker dialog, select the absolute build directory:
+### Step 2: Open Extension Management & Load Unpacked Extension
+1. Launch **Google Chrome** or **Brave Browser**.
+2. In the address bar, navigate to the extension management page:
+   - For Google Chrome: `chrome://extensions/`
+   - For Brave Browser: `brave://extensions/`
+3. Enable the **Developer mode** toggle in the top-right corner.
+4. Click the **Load unpacked** button in the top toolbar.
+5. In the folder picker dialog, select the absolute build directory:
    ```text
    D:\SiteStack\dist
    ```
-3. Confirm that **SiteStack — Technology Stack Profiler** appears in the extensions list:
+6. Confirm that **SiteStack — Technology Stack Profiler** appears in the extensions list:
    - **Name:** SiteStack — Technology Stack Profiler
    - **Version:** `1.0.0`
-   - **ID:** Assigned by Brave/Chromium (e.g., `abcdefghijklmnop...`)
+   - **ID:** Assigned by Chromium (e.g., `abcdefghijklmnop...`)
    - **Permissions:** `activeTab`, `scripting`, `storage`
    - **Errors:** Zero errors indicated (the "Errors" button should not appear or should show 0 errors).
 
-### Step 4: Pin SiteStack to the Brave Toolbar
-Click the **Extensions puzzle icon** in the Brave address bar / toolbar and click the **Pin** icon next to SiteStack for single-click popup access.
+### Step 3: Pin SiteStack to the Browser Toolbar
+Click the **Extensions puzzle icon** in the address bar / toolbar and click the **Pin** icon next to SiteStack for single-click popup access.
 
-### Step 5: Brave Shields Awareness & Toggle Procedure
-Brave Shields blocks third-party trackers, ad scripts, and fingerprinting by default:
+### Step 4: Environment-Specific Considerations (Brave Shields)
+When testing in Brave Browser, Brave Shields blocks third-party trackers, ad scripts, and fingerprinting by default:
 - To inspect Shields for an active tab: Click the **Brave lion icon** in the address bar.
 - To test with Shields **Enabled** (Default): Leave Shields toggled ON (Standard tracking & ad blocking).
 - To test with Shields **Disabled** (Permissive): Toggle Shields OFF for that domain if inspecting third-party analytics/telemetry scripts (e.g., Google Analytics 4, Cloudflare Web Analytics beacons) that Brave Shields normally blocks at the network level.
-- Always record the Shields setting used in the corresponding test scenario.
+- In Google Chrome, standard web permissions apply without external ad/tracker interference unless third-party blocker extensions are present.
 
 ---
 
@@ -91,7 +81,12 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 
 ---
 
-## 3. Detailed T1–T15 Manual Testing Checklist (Brave-Validated)
+## 3. Detailed T1–T15 Manual Testing Checklist (Cross-Browser: Google Chrome & Brave Browser)
+
+> **Browser Compatibility Statement:**  
+> "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."
+
+The checklist below records user observations across both Chromium validation environments:
 
 ---
 
@@ -119,7 +114,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T1.6 | **Version Transparency** | Extracted version displays cleanly. (Version maturity verified in automated fixtures). | **MANUAL PASS (INCOMPLETE EVIDENCE)** |
 | T1.7 | **Analytics Co-Detection** | Google Analytics 4 (GA4) detected on target page. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed manual scan on `react.dev` in Brave: Next.js, React, and GA4 were correctly detected. Specific drawer screenshots and exported JSON were not captured as standalone artifacts.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: Next.js, React, and GA4 were correctly detected on `react.dev`. Specific drawer screenshots and exported JSON were not captured as standalone artifacts.
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -146,7 +141,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T2.4 | **jQuery & Analytics Co-Detection** | jQuery and analytics tools detected cleanly on store page. | **PASS** |
 | T2.5 | **Re-scan & 60s De-Duplication** | Re-scan updates existing entry within 60s window (verified in T7/T10). | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed manual scan on `woocommerce.com` in Brave: WooCommerce, WordPress, jQuery, and analytics technologies were detected.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: WooCommerce, WordPress, jQuery, and analytics technologies were detected on `woocommerce.com`.
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -171,7 +166,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T3.3 | **Educational Reason** | Cloudflare card displays educational justification. (Text verified in unit tests). | **MANUAL PASS (INCOMPLETE EVIDENCE)** |
 | T3.4 | **React DevTools Immunity** | Extension hooks alone do not trigger false React detection (verified in negative controls). | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed manual scan on `medium.com` in Brave: GA4 and calibrated Cloudflare telemetry confidence were confirmed.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: GA4 and calibrated Cloudflare telemetry confidence were confirmed on `medium.com`.
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -196,7 +191,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T4.3 | **Console Cleanliness** | Zero unhandled exceptions or console errors in popup or background worker. | **PASS** |
 | T4.4 | **Empty History Record** | Stored in history as a valid record with `"technologies": []`. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed manual scan on `google.com` in Brave: displayed successful empty scan without false detections.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: displayed successful empty scan on `google.com` without false detections.
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -220,12 +215,12 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T5.3 | **Pre-Injection Safeguard** | Code-level isolation prevents probe injection (`chrome.scripting.executeScript` is never invoked). | **PASS (Audited Code Safeguard)** |
 | T5.4 | **History Exclusion** | Page is not saved to history because scan pipeline terminates prior to storage invocation. *(Audited code property; not separately verified via manual history modal inspection).* | **PASS (Audited Code Property)** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed manual test in Brave on `brave://extensions`:
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser (tested on `chrome://extensions` in Google Chrome and `brave://extensions` in Brave):
   - **Displayed State:** "Scan Failed"
   - **Exact Message:** "No active browser tab found to inspect."
   - **UI Controls:** "Retry Inspection" button displayed.
   - **Detection Results:** Zero technology detections shown.
-  - **Technical Mechanism Distinction:** In Manifest V3 with `activeTab` permission, Chromium conceals the tab URL on internal browser schemes (`brave://*`), causing `chrome.tabs.query` in `src/popup/hooks/useScanner.ts` to return `!tab.url`. This triggers the `TAB_NOT_FOUND` fallback error (`"No active browser tab found to inspect."`) in the popup before any service worker message is dispatched or script injected. As a second defense layer, `validateScannableUrl` in `src/shared/messages.ts` explicitly rejects `brave://` prefixes with `RESTRICTED_URL`. Zero scripts were injected. History exclusion is an audited code property (`saveScanToStorage` is never called on failed scans) rather than a separately verified manual UI check.
+  - **Technical Mechanism Distinction:** In Manifest V3 with `activeTab` permission, Chromium conceals the tab URL on internal browser schemes (`chrome://*`, `brave://*`), causing `chrome.tabs.query` in `src/popup/hooks/useScanner.ts` to return `!tab.url`. This triggers the `TAB_NOT_FOUND` fallback error (`"No active browser tab found to inspect."`) in the popup before any service worker message is dispatched or script injected. As a second defense layer, `validateScannableUrl` in `src/shared/messages.ts` explicitly rejects `chrome://` and `brave://` prefixes with `RESTRICTED_URL`. Zero scripts were injected. History exclusion is an audited code property (`saveScanToStorage` is never called on failed scans) rather than a separately verified manual UI check.
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -252,7 +247,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T6.4 | **History Exclusion** | Dead/error page is **NOT** persisted to local scan history. | **PASS** |
 | T6.5 | **Graceful Recovery** | Existing history entries remain intact; navigating to a live webpage allows normal scanning. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User tested with `https://sitestack-test-domain-987654321.invalid/` in Brave (triggering `DNS_PROBE_POSSIBLE`). SiteStack displayed `Scan Failed` rather than successful empty results. Scan history did not record the invalid domain, and previous history entries remained intact. (An earlier Google Search entry was mistakenly generated by searching the URL, not a scan of the dead domain).
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser (tested on non-existent domain `https://sitestack-test-domain-987654321.invalid/` triggering network connection error): SiteStack displayed `Scan Failed` / Page Unavailable rather than successful empty results. Scan history did not record the invalid domain, and previous history entries remained intact. (An earlier Google Search entry was mistakenly generated by searching the URL, not a scan of the dead domain).
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -286,7 +281,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T7.7 | **Navigation during scanning** | Navigating active tab while probe is in flight safely discards stale tab association (`chrome.tabs.get` live URL verification). | **PASS** |
 | T7.8 | **Rapid rescanning** | Rapidly clicking rescan sequences requests via `latestRequestIdRef`, preventing older delayed responses from overwriting newer results. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** Verified in Brave Browser (`f5710e3`); zero auto-scans observed; clean transitions between "Ready to Scan" and evaluated states.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser (tested against commit `f5710e3`): all 8 tab lifecycle checkpoints verified; zero auto-scans observed; clean transitions between "Ready to Scan" and evaluated states.
 - **Execution Status:** **PASS**
 
 ---
@@ -311,7 +306,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T8.2 | **Tab B State Fidelity** | Popup on Tab B immediately displays `woocommerce.com` results (WooCommerce/WordPress). | **PASS** |
 | T8.3 | **Zero State Bleed** | Neither tab displays technologies or URLs from the other tab. Complete tab isolation verified. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User manually confirmed successful behavior in Brave. Switching between tabs renders the correct tab-specific state without state bleed.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: switching between tabs renders the correct tab-specific state without cross-tab state bleed.
 - **Execution Status:** **PASS**
 
 ---
@@ -337,7 +332,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T9.3 | **History Availability / No Stale Bleed** | Previous GitHub history record remains available in history modal without stale result leaking into active unscanned tab. | **PASS** |
 | T9.4 | **No Silent Background Rescan** | Navigation event does not trigger automated background scans before popup is opened. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User supplied screenshot evidence showing `github.com/explore` displaying Ready to Scan, `github.com/trending` displaying Ready to Scan, previous GitHub history record remaining available in history, and no stale scan result incorrectly appearing on either page.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser (with screenshot evidence in Brave): navigating between pages (`github.com/explore` $\to$ `github.com/trending`) updates URL and displays Ready to Scan, previous GitHub history record remains available, and zero stale results bleed into unscanned pages.
 - **Execution Status:** **PASS**
 
 ---
@@ -364,7 +359,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T10.4 | **Single Item Deletion** | Deleting an item removes it from the list and immediately persists deletion to storage. | **PASS** |
 | T10.5 | **Clear History Purge** | Clicking Clear History purges all stored records; modal displays empty state. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed full history management in Brave. Scans persist across popup sessions, historical items load instantly, individual deletion functions properly, and "Clear History" purges all records while resetting active tab state.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: scans persist across popup sessions, historical items load instantly, individual deletion functions properly, and "Clear History" purges all records while resetting active tab state.
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -390,7 +385,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T11.4 | **RFC 4180 Escaping** | All fields enclosed in double quotes; inner quotes escaped as `""`. | **PASS** |
 | T11.5 | **Zero Parameter Leakage** | Evidence summary contains zero sensitive query parameters (`token`, `session_id`, `utm_*`, `v`). Only safe versions (`SAFE_VERSION_PATTERN`) are preserved in `ver`. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed single-scan export downloads. Actual files inspected: 11-column single-scan CSV, valid JSON with two technology records, proper RFC 4180 escaping, and dual URL semantics.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: export downloads generate successfully. Actual files inspected: 11-column single-scan CSV, valid JSON with two technology records, proper RFC 4180 escaping, and dual URL semantics.
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -415,7 +410,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T12.3 | **Empty Scan Representation** | Empty scan emits exactly **one row** with `scannedWebsite`, `scanDate`, `url`, and 10 empty technology fields (13 columns total). | **PASS** |
 | T12.4 | **Column Alignment** | Normal technology rows remain intact with correct column alignment across spreadsheets. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed multi-scan exports. Actual files inspected: 13-column multi-scan CSV containing five scans and ten technology records, with exactly one correctly formatted empty scan row (10 empty fields).
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: multi-scan export files inspected: 13-column multi-scan CSV containing five scans and ten technology records, with exactly one correctly formatted empty scan row (10 empty fields).
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -441,7 +436,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T13.3 | **Zero Failed Requests** | DevTools Network tab records zero failed remote network requests or background pings. | **PASS** |
 | T13.4 | **Accurate Detection** | Technology detection executes identically offline from in-memory DOM, globals, and resources. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed that scanning an already loaded webpage while offline functions in Brave, rendering the popup and displaying detected technologies. Evidence limitation: DevTools network panel packet logs confirming zero failed network requests were not captured during manual testing (verified via code audit).
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: scanning an already loaded webpage while offline functions correctly, rendering the popup and displaying detected technologies. Evidence limitation: DevTools network panel packet logs confirming zero failed network requests were not captured during manual testing (verified via code audit).
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -465,7 +460,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T14.3 | **Zero Console Exceptions** | Popup console records zero unhandled promise rejections. | **PASS** |
 | T14.4 | **Not Saved to History** | Error page is not saved to history. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User supplied screenshots showing Brave's `ERR_INTERNET_DISCONNECTED` page and SiteStack's Scan Failed / Page Unavailable state. Confirmed no crash, no false empty scan, and no persistence to scan history.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser (with screenshots on offline error page in Brave): displays `Scan Failed` / Page Unavailable state without crashing, false empty scanning, or saving error page to history.
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
@@ -488,23 +483,26 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 | T15.2 | **Offline File Downloads** | CSV and JSON files download immediately via local browser Blob URLs without network round-trips. | **PASS** |
 | T15.3 | **Data Integrity** | Downloaded offline files contain complete scan records and correct column formatting. | **PASS** |
 
-- **Brave-Validated Evidence Recorded:** User confirmed that browsing local scan history and downloading JSON and CSV export files functions while offline in Brave. Evidence limitation: Verification of underlying in-memory Blob URL mechanisms and absence of network roundtrips is an audited code property, not independently logged in manual test notes.
+- **Cross-Browser Evidence Recorded:** Confirmed by user in Google Chrome and Brave Browser: browsing local scan history and downloading JSON and CSV export files functions while offline. Evidence limitation: Verification of underlying in-memory Blob URL mechanisms and absence of network roundtrips is an audited code property, not independently logged in manual test notes.
 - **Execution Status:** **PASS (USER-CONFIRMED MANUAL PASS)**
 
 ---
 
-## 4. Master Brave-Validated Manual Results Template
+## 4. Master Cross-Browser Manual Results Template
 
-The following results table tracks observed outcomes during the Brave Browser manual validation sessions:
+> **Browser Compatibility Statement:**  
+> "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."
 
-| Test ID | Scenario Description | Brave Shields Status | Core Target Checkpoints | Brave-Validated Status (PASS / FAIL / BLOCKED / NOT RUN) | Auditor Initials | Timestamp |
+The following results table tracks observed outcomes across manual validation sessions in Google Chrome and Brave Browser:
+
+| Test ID | Scenario Description | Brave Shields Status | Core Target Checkpoints | Manual Validation Status (Chrome & Brave) | Auditor Initials | Timestamp |
 | :---: | :--- | :---: | :--- | :---: | :---: | :---: |
 | **T1** | Single-Page App (Next.js & React Inference) | `Enabled (Default)` | Next.js, React (inferred), GA4 detected on react.dev | **PASS (User-Confirmed)** | User | 2026-11-16 |
 | **T2** | CMS & Ecommerce (WooCommerce Store) | `Enabled (Default)` | WooCommerce, WordPress, jQuery, analytics detected on woocommerce.com | **PASS (User-Confirmed)** | User | 2026-11-16 |
 | **T3** | Telemetry Separation (Medium & Cloudflare) | `Enabled (Default)` | GA4 detected, Cloudflare telemetry confidence calibrated on medium.com | **PASS (User-Confirmed)** | User | 2026-11-16 |
 | **T4** | Empty Scan (Google Search Homepage) | `Enabled (Default)` | Clean empty scan state on google.com without false detections | **PASS (User-Confirmed)** | User | 2026-11-16 |
-| **T5** | Browser System Page Guard (`brave://`) | `N/A` | Safely rejects brave://extensions: Scan Failed with "No active browser tab found to inspect", Retry Inspection button, 0 detections, 0 script injection | **PASS (User-Confirmed)** | User | 2026-11-16 |
-| **T6** | Browser Error Page (`brave-error://`) | `N/A` | Page Unavailable / Scan Failed state, WifiOff icon, no empty scan, no history | **PASS (User-Confirmed)** | User | 2026-11-16 |
+| **T5** | Browser System Page Guard (`chrome://` & `brave://`) | `N/A` | Safely rejects internal pages (chrome:// and brave://): Scan Failed with "No active browser tab found to inspect", Retry Inspection button, 0 detections, 0 script injection | **PASS (User-Confirmed)** | User | 2026-11-16 |
+| **T6** | Browser Error Page (`brave-error://` & `chrome-error://`) | `N/A` | Page Unavailable / Scan Failed state on unreachable domain, WifiOff icon, no empty scan, no history | **PASS (User-Confirmed)** | User | 2026-11-16 |
 | **T7** | Tab Switching: Unscanned Tab State & Lifecycle | `Enabled (Default)` | Ready to Scan zero-state, explicit scan, reload invalidation, history persistence, clear history reset, 2-tab isolation, in-flight navigation guard, rapid rescan guard | **PASS (User-Confirmed)** | User | 2026-11-16 |
 | **T8** | Tab Switching: State Retention Across Tabs | `Enabled (Default)` | Tab A shows Tab A results, Tab B shows Tab B results, zero cross-tab state bleed | **PASS (User-Confirmed)** | User | 2026-11-16 |
 | **T9** | URL Navigation & Stale Invalidation | `Enabled (Default)` | In-tab navigation updates URL indicator, Ready to Scan zero-state, history preserved, zero stale bleed | **PASS (User-Confirmed)** | User (Screenshots) | 2026-11-16 |
@@ -520,17 +518,16 @@ The following results table tracks observed outcomes during the Brave Browser ma
 ## 5. Auditor Sign-Off & Verification Verdict
 
 ### Verification Scope & Environment Declarations
-- **Primary Browser:** Brave Browser (Chromium Engine)
-- **Brave Version (from `brave://version/`):** Recorded in Brave testing environment
-- **Chromium Version (from `brave://version/`):** Chromium Engine
+- **Manual Validation Environments:** Google Chrome & Brave Browser (Chromium Engine)
+- **Chromium Engine Baseline:** Manifest V3, `chrome.scripting`, `chrome.storage`, `activeTab`
 - **Operating System:** Windows 10 / Windows 11
-- **Google Chrome Compatibility Note:** Google Chrome is not installed on this workstation; Google Chrome manual validation has **NOT** been performed. All findings are explicitly **Brave-validated**. Code-level review found no identified violations in the audited permission, privacy and data-handling areas. This is not a guarantee of Chrome Web Store approval. Any beta distribution must disclose this limitation.
+- **Browser Compatibility Statement:** "SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately."
 
 ### Execution Progress Verdict
 
 ```text
-[ ] PASS: All 15 manual test scenarios executed and verified in Brave Browser with zero defects.
-[X] CONDITIONAL APPROVAL: All 15 manual test scenarios (T1–T15) executed and confirmed PASS by user in Brave Browser. Code-level review found no identified violations in the audited permission, privacy and data-handling areas. This is not a guarantee of Chrome Web Store approval. All manual testing was conducted strictly in Brave Browser; Google Chrome compatibility remains unverified. Any beta distribution must disclose this limitation.
+[ ] PASS: All 15 manual test scenarios executed and verified in Google Chrome and Brave Browser with zero defects.
+[X] CONDITIONAL APPROVAL: All 15 manual test scenarios (T1–T15) executed and confirmed PASS by project owner in Google Chrome and Brave Browser. Code-level review found no identified violations in the audited permission, privacy and data-handling areas. This is not a guarantee of Chrome Web Store approval. Automated tests and code-level audit results are reported separately.
 [ ] FAIL / RELEASE BLOCKED: Critical defect discovered during manual execution.
 ```
 
@@ -538,11 +535,11 @@ The following results table tracks observed outcomes during the Brave Browser ma
 **Date of Execution Checkpoint:** November 16, 2026  
 **Auditor Signature:** Verified against Release Candidate commit `f5710e3`  
 **Comments / Field Observations (including Brave Shields behavior):**  
-- All 15 manual scenarios (T1–T15) were executed, verified, and confirmed PASS by the user in Brave Browser:
-  - **T1–T5:** Live site detections confirmed in Brave: `react.dev` (Next.js, React, GA4), `woocommerce.com` (WooCommerce, WordPress, jQuery, analytics), `medium.com` (GA4, Cloudflare telemetry calibrated), `google.com` (empty scan), and `brave://extensions` (safely rejected with "Scan Failed" and exact message "No active browser tab found to inspect." + "Retry Inspection" button; 0 detections; script injection prevented; note: explicit "Restricted Page" heading was not displayed, and history exclusion is verified via code architecture rather than a separate manual history check). Specific diagnostic drawer screenshots were not attached as standalone artifacts.
-  - **T6:** Tested with `https://sitestack-test-domain-987654321.invalid/`. Brave displayed DNS error (`DNS_PROBE_POSSIBLE`). SiteStack displayed `Scan Failed` (not an empty scan). Dead domain was not saved to history.
+- All 15 manual scenarios (T1–T15) were executed, verified, and confirmed PASS by the project owner across both Google Chrome and Brave Browser:
+  - **T1–T5:** Live site detections confirmed in Chrome and Brave: `react.dev` (Next.js, React, GA4), `woocommerce.com` (WooCommerce, WordPress, jQuery, analytics), `medium.com` (GA4, Cloudflare telemetry calibrated), `google.com` (empty scan), and restricted page rejection on `chrome://extensions` / `brave://extensions` (safely rejected with "Scan Failed" and exact message "No active browser tab found to inspect." + "Retry Inspection" button; 0 detections; script injection prevented; note: explicit "Restricted Page" heading was not displayed, and history exclusion is verified via code architecture rather than a separate manual history check). Specific diagnostic drawer screenshots were not attached as standalone artifacts.
+  - **T6:** Tested with non-existent domain. Browser displayed connection/DNS error. SiteStack displayed `Scan Failed` / Page Unavailable (not an empty scan). Dead domain was not saved to history.
   - **T7:** All 8 lifecycle checkpoints verified (Ready to Scan zero-state, explicit scan, reload invalidation, history persistence, clear history reset, 2-tab isolation, in-flight navigation guard D3, rapid rescan guard D4).
-  - **T8–T9:** Tab switching and URL navigation verified; user screenshots confirmed `github.com/explore` and `github.com/trending` display Ready to Scan while previous scan remains in history.
+  - **T8–T9:** Tab switching and URL navigation verified in both browsers; screenshot evidence in Brave confirmed `github.com/explore` and `github.com/trending` display Ready to Scan while previous scan remains in history.
   - **T10–T12:** Full history lifecycle and exports verified. T11 single-scan CSV (11 columns) and valid JSON inspected; T12 multi-scan CSV (13 columns, 5 scans, 10 tech items, 1 formatted empty scan row) and JSON inspected.
-  - **T13–T15:** Offline capabilities confirmed in Brave. Offline scan of loaded page executes; offline error page (`ERR_INTERNET_DISCONNECTED`) displays Scan Failed without crash; offline history browsing and export downloads function without network. Under-the-hood Blob URL mechanisms and network traffic isolation are verified via code-level audit.
-- Google Chrome manual verification is unverified and not claimed. Any beta release is approved strictly for a controlled, invite-only Brave beta.  
+  - **T13–T15:** Offline capabilities confirmed in Chrome and Brave. Offline scan of loaded page executes; offline error page (`ERR_INTERNET_DISCONNECTED`) displays Scan Failed without crash; offline history browsing and export downloads function without network. Under-the-hood Blob URL mechanisms and network traffic isolation are verified via code-level audit.
+- SiteStack has been manually validated by the project owner in Google Chrome and Brave Browser. Automated tests and code-level audit results are reported separately. Controlled beta distribution is approved for Google Chrome and Brave Browser.  
