@@ -5,8 +5,8 @@
 **Evaluation Commit Checkpoint:** [`f5710e3`](file:///D:/SiteStack) (`fix(extension): harden tab-state lifecycle, session storage, and navigation guards`)  
 **Production Build Directory:** [`D:\SiteStack\dist`](file:///D:/SiteStack/dist)  
 **Validation Environment:** Brave Browser (Chromium Engine)  
-**Status:** **AUDIT CHECKLIST PREPARED (PENDING AUDITOR SIGN-OFF & T8–T15 EXECUTION)**  
-**Beta-Ready Declaration:** **DEFERRED** (Pending T8–T15 manual verification in Brave Browser and completion of all Section 1–13 audit sign-offs)
+**Status:** **AUDIT CHECKLIST PREPARED (PENDING AUDITOR SIGN-OFF & REMAINING MANUAL TESTS)**  
+**Beta-Ready Declaration:** **DEFERRED** (Pending manual verification of remaining scenarios [T1–T6, T10–T15] in Brave Browser and completion of all Section 1–13 audit sign-offs)
 
 ---
 
@@ -252,10 +252,10 @@ Document the explicit platform boundaries and compatibility declarations for Rel
 
 ```text
 [ ] APPROVED FOR BETA DISTRIBUTION: All 15 manual tests (T1–T15) verified in Brave Browser; all 13 audit domains signed off.
-[X] CONDITIONAL HOLD / DEFERRED: Scenario T7 validated (PASS); Scenarios T1–T6 and T8–T15 remain NOT RUN; final audit sign-offs pending completion of manual test suite.
+[X] CONDITIONAL HOLD / DEFERRED: Scenarios T7, T8, and T9 validated (PASS); Scenario T6 pending manual re-test; Scenarios T1–T5 and T10–T15 remain NOT RUN; final audit sign-offs pending completion of manual test suite.
 [ ] RELEASE BLOCKED: Critical defect identified during Phase 9.8 audit.
 ```
 
 **Lead Auditor:** ________________________________________  
 **Date of Verdict:** ________________________  
-**Release Disposition:** SiteStack is **NOT** declared beta-ready at this checkpoint. Beta readiness declaration is deferred until live manual execution of T1–T6 and T8–T15 in Brave Browser is completed and signed off.
+**Release Disposition:** SiteStack is **NOT** declared beta-ready at this checkpoint. Beta readiness declaration is deferred until live manual execution of remaining test scenarios (T1–T6, T10–T15) in Brave Browser is completed and signed off.

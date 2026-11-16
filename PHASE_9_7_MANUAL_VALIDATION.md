@@ -6,7 +6,7 @@
 **Release Candidate Commit Checkpoint:** [`f5710e3`](file:///D:/SiteStack) (`fix(extension): harden tab-state lifecycle, session storage, and navigation guards`)  
 **Extension Version:** `1.0.0` (Manifest V3)  
 **Creation / Update Date:** November 16, 2026  
-**Execution Status:** **PARTIAL** (Scenario T7 / Phase 9.7.3 Validated: **PASS** [8/8 lifecycle checks]; Scenarios T1–T6 and T8–T15 remain **NOT RUN**)  
+**Execution Status:** **PARTIAL** (Scenarios T7, T8, T9 Validated: **PASS** [User-Confirmed in Brave]; Scenario T6: **PENDING MANUAL RE-TEST**; Scenarios T1–T5 and T10–T15 remain **NOT RUN**)  
 **Automated Test Suite:** 340/340 passed across 24 test files  
 **TypeScript Compilation:** Passed (`tsc -b` zero errors)  
 **Production Build:** Passed (`npm run build` verified in [`dist/`](file:///D:/SiteStack/dist))
@@ -23,7 +23,7 @@ Phase 9.6.4 established strict privacy hardening at commit `dc668e5`, followed b
 3. **Chromium Engine Baseline:** Because Brave is built on the Chromium engine (Manifest V3, `chrome.scripting`, `chrome.storage`, `activeTab`), extension core APIs function identically, subject to Brave-specific privacy features (Brave Shields).
 4. **Brave Shields Impact Assessment:** Brave features built-in network and tracker blocking ("Brave Shields"). Where Brave Shields blocks third-party scripts (e.g., Google Analytics, Tag Manager, Cloudflare Web Analytics), detection results may vary. Each relevant test scenario includes a mandatory **Brave Shields Status** field (`Enabled` vs. `Disabled`).
 5. **Strict No-Auto-Scan Constraint:** All tests verify that scanning is 100% user-triggered. Opening unscanned tabs must show "Ready to Scan", and the extension must never initiate background scans.
-6. **Execution Status:** Scenario T7 has been physically executed in Brave Browser and **PASSED** across all 8 lifecycle checkpoints. Scenarios T1–T6 and T8–T15 remain marked **`NOT RUN`** pending physical execution by the user/auditor in Brave Browser.
+6. **Execution Status:** Scenarios T7, T8, and T9 have been physically executed and verified in Brave Browser (**PASS**). Scenario T6 (browser error page handling) was addressed at commit `09c892e` and remains **`PENDING MANUAL RE-TEST`**. Scenarios T1–T5 and T10–T15 remain marked **`NOT RUN`** pending physical execution by the user/auditor in Brave Browser.
 
 ---
 
@@ -238,17 +238,17 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 3. Click SiteStack extension icon.
 4. Open the History modal (clock icon) to verify whether the error page was saved.
 
-#### Expected Checkpoints
+#### Verification Status & Checkpoints
 | # | Checkpoint | Expected Behavior | Status |
 | :-: | :--- | :--- | :---: |
-| T6.1 | **Error Interception** | Service worker catches `chrome-error://` / `brave-error://` frame injection or probe flags error document. | `NOT RUN` |
-| T6.2 | **Page Unavailable State** | Popup displays **Page Unavailable** with amber tint, `WifiOff` icon, helpful explanation, and "Retry Inspection" button. | `NOT RUN` |
-| T6.3 | **No Misleading Empty Scan** | Does **NOT** display *"Scan completed successfully. No supported technologies were detected."* | `NOT RUN` |
-| T6.4 | **History Exclusion** | Dead/error page is **NOT** persisted to local scan history. | `NOT RUN` |
-| T6.5 | **Graceful Recovery** | Navigating to a live webpage allows normal scanning without needing to restart the extension. | `NOT RUN` |
+| T6.1 | **Error Interception** | Service worker catches `chrome-error://` / `brave-error://` frame injection or probe flags error document. | `PENDING RE-TEST` |
+| T6.2 | **Page Unavailable State** | Popup displays **Page Unavailable** with amber tint, `WifiOff` icon, helpful explanation, and "Retry Inspection" button. | `PENDING RE-TEST` |
+| T6.3 | **No Misleading Empty Scan** | Does **NOT** display *"Scan completed successfully. No supported technologies were detected."* | `PENDING RE-TEST` |
+| T6.4 | **History Exclusion** | Dead/error page is **NOT** persisted to local scan history. | `PENDING RE-TEST` |
+| T6.5 | **Graceful Recovery** | Navigating to a live webpage allows normal scanning without needing to restart the extension. | `PENDING RE-TEST` |
 
-- **Brave-Validated Evidence Required:** Screenshot of Page Unavailable state; History modal showing no record of dead domain.
-- **Execution Status:** **NOT RUN**
+- **Brave-Validated Evidence Status:** Original finding confirmed error page misclassified as empty scan. Remediation committed at [`09c892e`](file:///D:/SiteStack) (with 15 passing automated unit tests in `tests/extension/phase9-7-browser-error-pages.test.ts`). Live manual re-test in Brave pending.
+- **Execution Status:** **PENDING MANUAL RE-TEST**
 
 ---
 
@@ -291,7 +291,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 - **Target Websites:** Tab A (`https://react.dev`), Tab B (`https://woocommerce.com/store`)
 - **Objective:** Verify tab state isolation: switching between previously scanned tabs in Brave renders the appropriate scan state for each tab without cross-tab contamination.
 - **Preconditions:** Both tabs open in the same Brave window.
-- **Brave Shields Status:** `[ ] Enabled (Default)    [ ] Disabled`
+- **Brave Shields Status:** `[X] Enabled (Default)    [ ] Disabled`
 
 #### Execution Steps
 1. Scan Tab A (`react.dev`); note results.
@@ -299,15 +299,15 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 3. Switch back to Tab A and click SiteStack icon.
 4. Switch back to Tab B and click SiteStack icon.
 
-#### Expected Checkpoints
+#### Confirmed Manual Checkpoints (User-Confirmed in Brave)
 | # | Checkpoint | Expected Behavior | Status |
 | :-: | :--- | :--- | :---: |
-| T8.1 | **Tab A State Fidelity** | Popup on Tab A immediately displays `react.dev` results (React/Next.js). | `NOT RUN` |
-| T8.2 | **Tab B State Fidelity** | Popup on Tab B immediately displays `woocommerce.com` results (WooCommerce/WordPress). | `NOT RUN` |
-| T8.3 | **Zero State Bleed** | Neither tab displays technologies or URLs from the other tab. | `NOT RUN` |
+| T8.1 | **Tab A State Fidelity** | Popup on Tab A immediately displays `react.dev` results (React/Next.js). | **PASS** |
+| T8.2 | **Tab B State Fidelity** | Popup on Tab B immediately displays `woocommerce.com` results (WooCommerce/WordPress). | **PASS** |
+| T8.3 | **Zero State Bleed** | Neither tab displays technologies or URLs from the other tab. Complete tab isolation verified. | **PASS** |
 
-- **Brave-Validated Evidence Required:** Consecutive screenshots of popup open on Tab A and Tab B.
-- **Execution Status:** **NOT RUN**
+- **Brave-Validated Evidence Recorded:** User manually confirmed successful behavior in Brave. Switching between tabs renders the correct tab-specific state without state bleed.
+- **Execution Status:** **PASS**
 
 ---
 
@@ -316,22 +316,24 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 - **Target Website:** `https://github.com/explore` $\to$ `https://github.com/trending`
 - **Objective:** Verify that navigating within an existing tab invalidates prior scan results or displays an updated URL indicator, never claiming old signals represent new URLs.
 - **Preconditions:** Brave tab open on initial URL.
-- **Brave Shields Status:** `[ ] Enabled (Default)    [ ] Disabled`
+- **Brave Shields Status:** `[X] Enabled (Default)    [ ] Disabled`
 
 #### Execution Steps
 1. Scan `https://github.com/explore` in Brave.
-2. In the same tab, navigate to `https://github.com/trending` (or an external site).
+2. In the same tab, navigate to `https://github.com/trending`.
 3. Open SiteStack popup.
+4. Open the History modal to verify that previous scan records remain accessible.
 
-#### Expected Checkpoints
+#### Confirmed Manual Checkpoints (User-Confirmed with Screenshots in Brave)
 | # | Checkpoint | Expected Behavior | Status |
 | :-: | :--- | :--- | :---: |
-| T9.1 | **URL Synchronization** | Header reflects the current URL/domain, not the previous URL. | `NOT RUN` |
-| T9.2 | **Stale Invalidation / Fresh Scan** | Triggers fresh evaluation or prompts for re-scan for the new URL. | `NOT RUN` |
-| T9.3 | **No Silent Background Rescan** | Navigation event does not trigger automated background scans before popup is opened. | `NOT RUN` |
+| T9.1 | **URL Synchronization** | Header reflects current URL/domain (`github.com`), not prior tab path. | **PASS** |
+| T9.2 | **Stale Invalidation / Ready to Scan** | Navigating to `github.com/explore` and `github.com/trending` displays "Ready to Scan" zero-state. | **PASS** |
+| T9.3 | **History Availability / No Stale Bleed** | Previous GitHub history record remains available in history modal without stale result leaking into active unscanned tab. | **PASS** |
+| T9.4 | **No Silent Background Rescan** | Navigation event does not trigger automated background scans before popup is opened. | **PASS** |
 
-- **Brave-Validated Evidence Required:** Screenshot showing updated URL and fresh scan results.
-- **Execution Status:** **NOT RUN**
+- **Brave-Validated Evidence Recorded:** User supplied screenshot evidence showing `github.com/explore` displaying Ready to Scan, `github.com/trending` displaying Ready to Scan, previous GitHub history record remaining available in history, and no stale scan result incorrectly appearing on either page.
+- **Execution Status:** **PASS**
 
 ---
 
@@ -497,10 +499,10 @@ The following results table tracks observed outcomes during the Brave Browser ma
 | **T3** | Telemetry Separation (Medium & Cloudflare) | `Enabled / Disabled` | Cloudflare beacon Low 45% + educational note, GA4 High | **NOT RUN** | — | — |
 | **T4** | Empty Scan (Google Search Homepage) | `Enabled / Disabled` | Clean EmptyState, <100ms execution, valid empty history entry | **NOT RUN** | — | — |
 | **T5** | Browser System Page Guard (`brave://`) | `N/A` | Pre-injection guard, security notice, 0 console errors, no history | **NOT RUN** | — | — |
-| **T6** | Browser Error Page (`brave-error://`) | `N/A` | Page Unavailable state, WifiOff icon, no empty scan, no history | **NOT RUN** | — | — |
+| **T6** | Browser Error Page (`brave-error://`) | `N/A` | Page Unavailable state, WifiOff icon, no empty scan, no history | **PENDING RE-TEST** | Auditor | 2026-11-16 |
 | **T7** | Tab Switching: Unscanned Tab State & Lifecycle | `Enabled (Default)` | Ready to Scan zero-state, explicit scan, reload invalidation, history persistence, clear history reset, 2-tab isolation, in-flight navigation guard, rapid rescan guard | **PASS** | Auditor | 2026-11-16 |
-| **T8** | Tab Switching: State Retention Across Tabs | `Enabled / Disabled` | Tab A shows Tab A results, Tab B shows Tab B results | **NOT RUN** | — | — |
-| **T9** | URL Navigation & Stale Invalidation | `Enabled / Disabled` | In-tab navigation updates URL indicator, prompts fresh scan | **NOT RUN** | — | — |
+| **T8** | Tab Switching: State Retention Across Tabs | `Enabled (Default)` | Tab A shows Tab A results, Tab B shows Tab B results, zero cross-tab state bleed | **PASS** | User | 2026-11-16 |
+| **T9** | URL Navigation & Stale Invalidation | `Enabled (Default)` | In-tab navigation updates URL indicator, Ready to Scan zero-state, history preserved, zero stale bleed | **PASS** | User (Screenshots) | 2026-11-16 |
 | **T10** | Local History Persistence & Deletion | `N/A` | 50-item LRU, inspect record, delete item, Clear History purge | **NOT RUN** | — | — |
 | **T11** | Single-Scan JSON & CSV Export | `Enabled / Disabled` | 11 columns, RFC 4180 escaping, dual URL semantics, 0 token leakage | **NOT RUN** | — | — |
 | **T12** | Multi-Scan CSV & JSON Export | `N/A` | 13 columns, dedicated empty scan row with 10 empty tech fields | **NOT RUN** | — | — |
@@ -525,13 +527,17 @@ The following results table tracks observed outcomes during the Brave Browser ma
 [ ] PASS: All 15 manual test scenarios executed and verified in Brave Browser with zero defects.
 [ ] CONDITIONAL APPROVAL: Minor non-blocking cosmetic defects noted in Brave Browser.
 [ ] FAIL / RELEASE BLOCKED: Critical defect discovered during manual execution.
-[X] PARTIAL / IN PROGRESS: Scenario T7 (Phase 9.7.3 tab-state lifecycle) manually verified and PASSED in Brave Browser across all 8 checkpoints. Scenarios T1–T6 and T8–T15 remain marked NOT RUN pending live execution.
+[X] PARTIAL / IN PROGRESS: Scenarios T7, T8, and T9 manually verified and PASSED in Brave Browser. Scenario T6 is PENDING MANUAL RE-TEST following fix commit 09c892e. Scenarios T1–T5 and T10–T15 remain marked NOT RUN pending live execution.
 ```
 
 **Auditor Name / Role:** Auditor / QA  
 **Date of Execution Checkpoint:** November 16, 2026  
 **Auditor Signature:** Verified against Release Candidate commit `f5710e3`  
 **Comments / Field Observations (including Brave Shields behavior):**  
-- Scenario T7 executed in Brave Browser with Brave Shields Enabled. Confirmed zero auto-scanning, "Ready to Scan" zero-state on fresh tabs, clean reload invalidation on F5 (`status === 'loading'`), persistent history synchronization, two-tab isolation, in-flight navigation guard (D3), and rapid rescan sequencing (D4).
-- T1–T6 and T8–T15 remain marked `NOT RUN` until live manual results are supplied.
+- Scenarios T7, T8, and T9 executed and verified in Brave Browser with Brave Shields Enabled.
+  - T7 confirmed zero auto-scanning, "Ready to Scan" zero-state on fresh tabs, clean reload invalidation on F5 (`status === 'loading'`), persistent history synchronization, two-tab isolation, in-flight navigation guard (D3), and rapid rescan sequencing (D4).
+  - T8 confirmed tab-to-scan isolation: switching between tabs renders each tab's own scan state with zero cross-tab bleed.
+  - T9 confirmed via user screenshots on GitHub: navigating to `github.com/explore` and `github.com/trending` correctly displays Ready to Scan, preserves prior history records, and displays no stale results.
+- Scenario T6 (browser connection error page handling) was addressed at commit `09c892e` (with 15 automated regression tests) and remains `PENDING MANUAL RE-TEST` in Brave.
+- Scenarios T1–T5 and T10–T15 remain marked `NOT RUN` until live manual results are supplied.
 - Google Chrome manual verification is unverified and not claimed.  
