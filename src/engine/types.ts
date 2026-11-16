@@ -71,6 +71,7 @@ export interface TechRule {
   icon: string;
   description: string;
   implies?: string[];
+  maxConfidenceScore?: number; // Optional rule-level ceiling to prevent uncorroborated telemetry signals from reaching High confidence
   signals: {
     meta?: MetaRuleSignal[];
     dom?: DomRuleSignal[];

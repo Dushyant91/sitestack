@@ -1039,7 +1039,8 @@ describe('Phase 7: Expanded Real-World Benchmark & False-Positive Audit Suite', 
 
       expect(vercel).toBeDefined();
       expect(vercel?.category).toBe('infrastructure');
-      expect(vercel?.confidenceTier).toBe('high');
+      expect(vercel?.confidenceTier).toBe('medium');
+      expect(vercel?.confidenceScore).toBe(69);
     });
 
     it('P56: speed-insights-site.com — Vercel speed insights v1 script and va global', () => {
@@ -1054,7 +1055,8 @@ describe('Phase 7: Expanded Real-World Benchmark & False-Positive Audit Suite', 
       const vercel = result.technologies.find((t) => t.id === 'vercel');
 
       expect(vercel).toBeDefined();
-      expect(vercel?.confidenceTier).toBe('high');
+      expect(vercel?.confidenceTier).toBe('medium');
+      expect(vercel?.confidenceScore).toBe(69);
     });
 
     it('P57: netlify-site.com — Netlify identity widget and serverless functions endpoint', () => {

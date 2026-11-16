@@ -228,7 +228,15 @@ export function evaluateRule(
   const corroborationBonus = distinctClassCount > 1 ? 1 + 0.15 * Math.min(2, distinctClassCount - 1) : 1.0;
 
   const rawScore = Math.round(baseWeightSum * corroborationBonus);
-  const confidenceScore = Math.min(100, rawScore);
+  let confidenceScore = Math.min(100, rawScore);
+
+  // Apply rule-level score ceiling if specified and no server header corroboration is present
+  if (typeof rule.maxConfidenceScore === 'number' && confidenceScore > rule.maxConfidenceScore) {
+    const hasServerCorroboration = matchedEvidence.some((e) => e.type === 'header');
+    if (!hasServerCorroboration) {
+      confidenceScore = rule.maxConfidenceScore;
+    }
+  }
 
   // If score is below noise floor (30), suppress it
   if (confidenceScore < SCORE_MIN_THRESHOLD) {

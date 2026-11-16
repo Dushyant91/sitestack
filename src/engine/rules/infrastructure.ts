@@ -25,14 +25,15 @@ export const infrastructureRules: TechRule[] = [
     website: 'https://vercel.com',
     icon: '/tech-icons/infrastructure/vercel.svg',
     description: 'Frontend cloud platform powering edge deployments and serverless functions.',
+    maxConfidenceScore: 69, // Rule-level safeguard: Client telemetry signals alone must not produce High confidence (>=80) Vercel hosting
     signals: {
       globals: [
         { path: 'va', weight: 25 }, // Client telemetry global (Vercel Analytics): calibrated to weight 25 (< 30 noise floor) as supporting evidence; does not independently claim hosting
         { path: 'si', weight: 25 }, // Client telemetry global (Vercel Speed Insights): calibrated to weight 25 (< 30 noise floor) as supporting evidence; does not independently claim hosting
       ],
       resources: [
-        { urlRegex: /\/_vercel\/insights\/script\.js/i, weight: 45 },
-        { urlRegex: /\/_vercel\/speed-insights\/v1\/script\.js/i, weight: 45 },
+        { urlRegex: /\/_vercel\/insights\/script\.js/i, weight: 35 }, // Telemetry resource: calibrated to weight 35
+        { urlRegex: /\/_vercel\/speed-insights\/v1\/script\.js/i, weight: 35 }, // Telemetry resource: calibrated to weight 35
       ],
     },
   },

@@ -44,11 +44,12 @@ describe('Detection Engine Evaluator', () => {
     expect(react).toBeDefined();
     expect(react?.name).toBe('React');
 
-    // Verify Vercel detected
+    // Verify Vercel detected (safely capped at Medium tier for telemetry signals)
     const vercel = result.technologies.find((t) => t.id === 'vercel');
     expect(vercel).toBeDefined();
     expect(vercel?.name).toBe('Vercel');
-    expect(vercel?.confidenceTier).toBe('high');
+    expect(vercel?.confidenceTier).toBe('medium');
+    expect(vercel?.confidenceScore).toBe(69);
   });
 
   it('should detect WordPress and WooCommerce with versions and jQuery', () => {

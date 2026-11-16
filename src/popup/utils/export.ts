@@ -1,4 +1,4 @@
-import { ScanResult } from '../../engine/types';
+import { ScanResult, VersionMaturity } from '../../engine/types';
 import { normalizeScanUrl } from '../../extension/storage/history';
 
 function triggerDownload(blob: Blob, filename: string): void {
@@ -24,6 +24,8 @@ export interface ExportRecordJson {
   technology: string;
   category: string;
   version: string | null;
+  /** Optional version maturity classification ('stable' | 'prerelease' | 'development' | 'unknown') */
+  versionMaturity?: VersionMaturity | null;
   confidenceScore: number;
   confidenceTier: string;
   detectionType: 'direct' | 'inferred';
@@ -86,6 +88,7 @@ export function formatExportJson(scanResult: ScanResult): StandardExportPayload 
       technology: t.name,
       category: t.category,
       version: t.version || null,
+      versionMaturity: t.versionMaturity || null,
       confidenceScore: t.confidenceScore,
       confidenceTier: t.confidenceTier,
       detectionType: t.detectionType,

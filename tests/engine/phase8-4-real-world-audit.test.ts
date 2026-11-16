@@ -53,7 +53,7 @@ describe('SiteStack Phase 8.4: Real-World Detection Audit Verification', () => {
       expect(vercel).toBeUndefined();
     });
 
-    it('1.3. Multi-class corroboration (telemetry global + vercel deployment script) elevates Vercel to High confidence', () => {
+    it('1.3. Multi-class corroboration (telemetry globals + vercel deployment scripts) is safely capped at Medium confidence (69)', () => {
       const vercelSite: HarvestedSignals = {
         url: 'https://actual-vercel-site.com',
         globals: {
@@ -72,8 +72,8 @@ describe('SiteStack Phase 8.4: Real-World Detection Audit Verification', () => {
       const vercel = result.technologies.find((t) => t.id === 'vercel');
 
       expect(vercel).toBeDefined();
-      expect(vercel?.confidenceTier).toBe('high');
-      expect(vercel?.confidenceScore).toBeGreaterThanOrEqual(80);
+      expect(vercel?.confidenceTier).toBe('medium');
+      expect(vercel?.confidenceScore).toBe(69);
       expect(vercel?.evidence.some((e) => e.source === 'window.va')).toBe(true);
       expect(vercel?.evidence.some((e) => e.source === 'window.si')).toBe(true);
       expect(vercel?.evidence.some((e) => e.source.includes('_vercel/insights'))).toBe(true);

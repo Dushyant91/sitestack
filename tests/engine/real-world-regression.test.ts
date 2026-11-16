@@ -388,6 +388,7 @@ describe('Real-World Detection Audit & Regression Test Suite', () => {
       'technology',
       'category',
       'version',
+      'versionMaturity',
       'confidenceScore',
       'confidenceTier',
       'detectionType',

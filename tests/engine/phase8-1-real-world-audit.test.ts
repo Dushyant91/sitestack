@@ -235,7 +235,7 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       expect(result.technologies.length).toBe(0);
     });
 
-    it('2.3. Vercel with verified script and telemetry global achieves High confidence', () => {
+    it('2.3. Vercel with telemetry script and global achieves Medium confidence (69) and avoids false High tier hosting claim', () => {
       const verifiedVercelSite: HarvestedSignals = {
         url: 'https://my-app.vercel.app',
         globals: {
@@ -252,8 +252,8 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       const vercel = result.technologies.find((t) => t.id === 'vercel');
 
       expect(vercel).toBeDefined();
-      expect(vercel?.confidenceTier).toBe('high');
-      expect(vercel?.confidenceScore).toBeGreaterThanOrEqual(80);
+      expect(vercel?.confidenceTier).toBe('medium');
+      expect(vercel?.confidenceScore).toBe(69);
     });
 
     it('2.4. Shopify on Shopify.com: Standalone CDN asset yields Low tier with clear storefront disclaimer', () => {
