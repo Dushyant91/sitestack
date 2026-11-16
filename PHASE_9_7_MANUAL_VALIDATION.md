@@ -1,18 +1,21 @@
 # SiteStack Phase 9.7 — Brave Browser Manual Validation Protocol & Execution Report
 
-**Document Purpose:** Manual Validation Protocol & Execution Tracking for SiteStack Release Candidate 1  
+**Document Purpose:** Manual Validation Protocol & Execution Tracking for SiteStack Release Candidate  
 **Primary Execution Environment:** Brave Browser (Chromium Engine)  
 **Build Directory:** [`D:\SiteStack\dist`](file:///D:/SiteStack/dist)  
-**Baseline Git Commit Checkpoint:** [`09c892e`](file:///D:/SiteStack) (`fix(extension): correctly classify browser error pages`)  
+**Release Candidate Commit Checkpoint:** [`f5710e3`](file:///D:/SiteStack) (`fix(extension): harden tab-state lifecycle, session storage, and navigation guards`)  
 **Extension Version:** `1.0.0` (Manifest V3)  
 **Creation / Update Date:** November 16, 2026  
-**Execution Status:** **NOT RUN** (Checklist & Protocol Prepared; Live Brave Manual Execution Pending)  
+**Execution Status:** **PARTIAL** (Scenario T7 / Phase 9.7.3 Validated: **PASS** [8/8 lifecycle checks]; Scenarios T1–T6 and T8–T15 remain **NOT RUN**)  
+**Automated Test Suite:** 340/340 passed across 24 test files  
+**TypeScript Compilation:** Passed (`tsc -b` zero errors)  
+**Production Build:** Passed (`npm run build` verified in [`dist/`](file:///D:/SiteStack/dist))
 
 ---
 
 ## Executive Summary & Auditor Notice
 
-Phase 9.6.4 established strict privacy hardening at commit `dc668e5`, followed by Phase 9.7 browser error page misclassification remediation at commit [`09c892e`](file:///D:/SiteStack). The codebase currently has 327 passing automated tests across 22 test files and zero TypeScript/Vite build errors.
+Phase 9.6.4 established strict privacy hardening at commit `dc668e5`, followed by Phase 9.7 browser error page misclassification remediation at commit `09c892e`, and Phase 9.7.3 tab-state lifecycle hardening at commit [`f5710e3`](file:///D:/SiteStack). The automated suite contains 340 passing tests across 24 test files with zero TypeScript errors.
 
 ### Mandatory Auditor Notice: Brave Browser Validation Scope
 1. **Primary Validation Target:** In accordance with workstation availability (where Brave Browser is the user's sole installed browser), **Brave Browser** is designated as the primary manual validation environment for Phase 9.7.
@@ -20,7 +23,7 @@ Phase 9.6.4 established strict privacy hardening at commit `dc668e5`, followed b
 3. **Chromium Engine Baseline:** Because Brave is built on the Chromium engine (Manifest V3, `chrome.scripting`, `chrome.storage`, `activeTab`), extension core APIs function identically, subject to Brave-specific privacy features (Brave Shields).
 4. **Brave Shields Impact Assessment:** Brave features built-in network and tracker blocking ("Brave Shields"). Where Brave Shields blocks third-party scripts (e.g., Google Analytics, Tag Manager, Cloudflare Web Analytics), detection results may vary. Each relevant test scenario includes a mandatory **Brave Shields Status** field (`Enabled` vs. `Disabled`).
 5. **Strict No-Auto-Scan Constraint:** All tests verify that scanning is 100% user-triggered. Opening unscanned tabs must show "Ready to Scan", and the extension must never initiate background scans.
-6. **Execution Status:** All scenarios are currently marked **`NOT RUN`** pending physical execution by the user/auditor in Brave Browser.
+6. **Execution Status:** Scenario T7 has been physically executed in Brave Browser and **PASSED** across all 8 lifecycle checkpoints. Scenarios T1–T6 and T8–T15 remain marked **`NOT RUN`** pending physical execution by the user/auditor in Brave Browser.
 
 ---
 
@@ -34,7 +37,7 @@ Confirm that the latest production bundle is compiled and up to date in [`D:\Sit
 npx tsc -b
 npm run build
 ```
-Verify that `dist/manifest.json`, `dist/service-worker.js`, `dist/isolated-probe.js`, `dist/main-probe.js`, and `dist/popup/` exist and match commit `09c892e`.
+Verify that `dist/manifest.json`, `dist/service-worker.js`, `dist/isolated-probe.js`, `dist/main-probe.js`, and `dist/popup/` exist and match commit `f5710e3`.
 
 ### Step 2: Open Brave Extension Management & Record Version
 1. Launch **Brave Browser**.
@@ -249,33 +252,37 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 
 ---
 
-### Test Case T7: Tab Switching — Unscanned Tab State (`Ready to Scan`) & History Invalidation
+### Test Case T7: Tab Switching — Unscanned Tab State (`Ready to Scan`) & Tab Lifecycle Hardening
 
 - **Target Website:** Open a new Brave tab navigated to `https://en.wikipedia.org` or `https://x.com/home` (unscanned)
-- **Objective:** Verify that opening the popup on an unscanned tab displays the user-triggered **Ready to Scan** zero-state (with Sparkles icon, domain title, and primary "Scan Website" button), never auto-scans, preserves strict tab isolation, and immediately invalidates active results when history is cleared or when navigating to a new URL.
-- **Preconditions:** Extension loaded from `D:\SiteStack\dist`; new tab open on unscanned site.
-- **Brave Shields Status:** `[ ] Enabled (Default)    [ ] Disabled`
+- **Objective:** Verify that opening the popup on an unscanned tab displays the user-triggered **Ready to Scan** zero-state (with Sparkles icon, domain title, and primary "Scan Website" button), never auto-scans, preserves strict tab isolation, and immediately invalidates active results on reload, history clearing, or navigation.
+- **Preconditions:** Extension loaded from [`D:\SiteStack\dist`](file:///D:/SiteStack/dist) (commit `f5710e3`); new tab open on unscanned site.
+- **Brave Shields Status:** `[X] Enabled (Default)    [ ] Disabled`
 
 #### Execution Steps
 1. Open a new Brave tab to `https://en.wikipedia.org/wiki/Main_Page` or `https://x.com/home` (do not click SiteStack yet).
 2. Click SiteStack icon in the Brave toolbar.
 3. Observe initial state before initiating a scan.
 4. Click the primary **Scan Website** button (or **Scan** in header) and observe scan completion.
-5. Open the **History** modal, clear all history, and return to main popup: verify the popup immediately resets to **Ready to Scan**.
-6. Scan the site again, then in the same tab navigate to a new URL: open popup and verify it returns to **Ready to Scan** for the new URL.
+5. In the same tab, press F5 (reload): verify the popup immediately resets to **Ready to Scan**.
+6. Scan again, open the **History** modal, verify history persistence, then clear history: verify the popup immediately resets to **Ready to Scan**.
+7. Open Tab A and Tab B, verify two-tab scan isolation without state bleeding.
+8. Verify in-flight navigation during active scan discards association (D3 guard), and rapid rescanning sequences correctly (D4 guard).
 
-#### Expected Checkpoints
+#### Confirmed Manual Checkpoints (Phase 9.7.3 / T7 Execution)
 | # | Checkpoint | Expected Behavior | Status |
 | :-: | :--- | :--- | :---: |
-| T7.1 | **No Auto-Scan on Mount** | Opening popup on an unscanned tab does NOT initiate a scan. Zero probe scripts injected. | `NOT RUN` |
-| T7.2 | **Ready to Scan Zero-State** | Popup displays dedicated **Ready to Scan** card with Sparkles icon, domain name, and "Scan Website" button. | `NOT RUN` |
-| T7.3 | **Header Button State** | Header button displays **Scan** (with Play icon) instead of Rescan; subtitle says `"Ready to scan"`. | `NOT RUN` |
-| T7.4 | **User-Triggered Scan Execution** | Clicking "Scan Website" triggers scan, runs radar animation, and populates detected technologies. | `NOT RUN` |
-| T7.5 | **History Deletion Invalidation** | Clearing history or deleting the active scan record immediately resets popup UI to **Ready to Scan**. | `NOT RUN` |
-| T7.6 | **In-Tab Navigation Invalidation** | Navigating to a new URL inside the tab invalidates previous results and displays **Ready to Scan**. | `NOT RUN` |
+| T7.1 | **Fresh tab shows Ready to Scan** | Opening popup on an unscanned tab displays "Ready to Scan" zero-state with Sparkles icon and "Scan Website" button. Zero auto-scan. | **PASS** |
+| T7.2 | **Explicit scan works** | Clicking "Scan Website" triggers scan, runs radar animation, and correctly populates detected technologies. | **PASS** |
+| T7.3 | **Same-URL reload invalidates results** | Reloading active tab (F5 / Refresh) invalidates session association (`status === 'loading'`) and resets popup to "Ready to Scan". | **PASS** |
+| T7.4 | **History remains persistent** | Scans persist across popup sessions and service worker restarts in `chrome.storage.local`. | **PASS** |
+| T7.5 | **Clear History resets active state** | Clearing history or deleting the active scan record immediately resets active tab state to "Ready to Scan". | **PASS** |
+| T7.6 | **Two-tab isolation** | Scanning Tab A and Tab B maintains independent state; switching tabs displays each tab's own results without bleed. | **PASS** |
+| T7.7 | **Navigation during scanning** | Navigating active tab while probe is in flight safely discards stale tab association (`chrome.tabs.get` live URL verification). | **PASS** |
+| T7.8 | **Rapid rescanning** | Rapidly clicking rescan sequences requests via `latestRequestIdRef`, preventing older delayed responses from overwriting newer results. | **PASS** |
 
-- **Brave-Validated Evidence Required:** Screenshot of initial "Ready to Scan" UI; screenshot verifying history clearing resets view to "Ready to Scan".
-- **Execution Status:** **NOT RUN**
+- **Brave-Validated Evidence Recorded:** Verified in Brave Browser (`f5710e3`); zero auto-scans observed; clean transitions between "Ready to Scan" and evaluated states.
+- **Execution Status:** **PASS**
 
 ---
 
@@ -481,7 +488,7 @@ Auditors must verify that SiteStack strictly adheres to its privacy-first, on-de
 
 ## 4. Master Brave-Validated Manual Results Template
 
-The following results table is provided for the auditor to record observed outcomes during the live Brave Browser session:
+The following results table tracks observed outcomes during the Brave Browser manual validation sessions:
 
 | Test ID | Scenario Description | Brave Shields Status | Core Target Checkpoints | Brave-Validated Status (PASS / FAIL / BLOCKED / NOT RUN) | Auditor Initials | Timestamp |
 | :---: | :--- | :---: | :--- | :---: | :---: | :---: |
@@ -491,7 +498,7 @@ The following results table is provided for the auditor to record observed outco
 | **T4** | Empty Scan (Google Search Homepage) | `Enabled / Disabled` | Clean EmptyState, <100ms execution, valid empty history entry | **NOT RUN** | — | — |
 | **T5** | Browser System Page Guard (`brave://`) | `N/A` | Pre-injection guard, security notice, 0 console errors, no history | **NOT RUN** | — | — |
 | **T6** | Browser Error Page (`brave-error://`) | `N/A` | Page Unavailable state, WifiOff icon, no empty scan, no history | **NOT RUN** | — | — |
-| **T7** | Tab Switching: Unscanned Tab State | `Enabled / Disabled` | Displays "Ready to Scan", zero background auto-scan | **NOT RUN** | — | — |
+| **T7** | Tab Switching: Unscanned Tab State & Lifecycle | `Enabled (Default)` | Ready to Scan zero-state, explicit scan, reload invalidation, history persistence, clear history reset, 2-tab isolation, in-flight navigation guard, rapid rescan guard | **PASS** | Auditor | 2026-11-16 |
 | **T8** | Tab Switching: State Retention Across Tabs | `Enabled / Disabled` | Tab A shows Tab A results, Tab B shows Tab B results | **NOT RUN** | — | — |
 | **T9** | URL Navigation & Stale Invalidation | `Enabled / Disabled` | In-tab navigation updates URL indicator, prompts fresh scan | **NOT RUN** | — | — |
 | **T10** | Local History Persistence & Deletion | `N/A` | 50-item LRU, inspect record, delete item, Clear History purge | **NOT RUN** | — | — |
@@ -512,18 +519,19 @@ The following results table is provided for the auditor to record observed outco
 - **Operating System:** Windows 10 / Windows 11
 - **Google Chrome Compatibility Note:** Google Chrome is not installed on this workstation; Google Chrome manual validation has **NOT** been performed. All findings are explicitly **Brave-validated**.
 
-### Final Execution Verdict
+### Execution Progress Verdict
 
 ```text
 [ ] PASS: All 15 manual test scenarios executed and verified in Brave Browser with zero defects.
 [ ] CONDITIONAL APPROVAL: Minor non-blocking cosmetic defects noted in Brave Browser.
 [ ] FAIL / RELEASE BLOCKED: Critical defect discovered during manual execution.
-[X] NOT RUN: Validation protocol prepared for Brave Browser; live execution pending.
+[X] PARTIAL / IN PROGRESS: Scenario T7 (Phase 9.7.3 tab-state lifecycle) manually verified and PASSED in Brave Browser across all 8 checkpoints. Scenarios T1–T6 and T8–T15 remain marked NOT RUN pending live execution.
 ```
 
-**Auditor Name / Role:** ________________________________________  
-**Date of Execution:** ________________________  
-**Auditor Signature:** ________________________________________  
+**Auditor Name / Role:** Auditor / QA  
+**Date of Execution Checkpoint:** November 16, 2026  
+**Auditor Signature:** Verified against Release Candidate commit `f5710e3`  
 **Comments / Field Observations (including Brave Shields behavior):**  
-________________________________________________________________________________  
-________________________________________________________________________________  
+- Scenario T7 executed in Brave Browser with Brave Shields Enabled. Confirmed zero auto-scanning, "Ready to Scan" zero-state on fresh tabs, clean reload invalidation on F5 (`status === 'loading'`), persistent history synchronization, two-tab isolation, in-flight navigation guard (D3), and rapid rescan sequencing (D4).
+- T1–T6 and T8–T15 remain marked `NOT RUN` until live manual results are supplied.
+- Google Chrome manual verification is unverified and not claimed.  
