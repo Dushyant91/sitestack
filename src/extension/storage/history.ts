@@ -8,6 +8,7 @@ import {
 export { normalizeScanUrl, sanitizeResourceUrl, sanitizeResourceEvidenceString };
 
 export const STORAGE_KEY_HISTORY = 'sitestack_history';
+export const STORAGE_KEY_TAB_SCANS = 'sitestack_tab_scans';
 export const MAX_HISTORY_ITEMS = 50;
 export const RESCAN_DUPLICATE_THRESHOLD_MS = 60000; // 60 seconds debounce window for duplicate rescans
 
@@ -276,6 +277,30 @@ export async function deleteScanFromHistory(idOrTimestamp: string | number): Pro
 
     if (filtered.length !== initialLen) {
       await chrome.storage.local.set({ [STORAGE_KEY_HISTORY]: filtered });
+
+      // Invalidate any active tab scan referencing this deleted item
+      try {
+        const tabScans = await getTabScansMap();
+        let modified = false;
+        for (const tabKey in tabScans) {
+          const entry = tabScans[tabKey];
+          if (
+            entry.scanId === idOrTimestamp ||
+            String(entry.timestamp) === String(idOrTimestamp) ||
+            (typeof idOrTimestamp === 'number' && entry.timestamp === idOrTimestamp) ||
+            entry.result?.domain === idOrTimestamp
+          ) {
+            delete tabScans[tabKey];
+            modified = true;
+          }
+        }
+        if (modified) {
+          await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+        }
+      } catch (tabErr) {
+        console.warn('[SiteStack Storage] Failed to prune tab scans on delete:', tabErr);
+      }
+
       return true;
     }
     return false;
@@ -286,14 +311,153 @@ export async function deleteScanFromHistory(idOrTimestamp: string | number): Pro
 }
 
 /**
- * Clears all scan history
+ * Clears all scan history and active tab scan associations
  */
 export async function clearScanHistory(): Promise<void> {
   if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
   try {
     await chrome.storage.local.remove(STORAGE_KEY_HISTORY);
+    try {
+      await chrome.storage.local.remove(STORAGE_KEY_TAB_SCANS);
+    } catch {
+      // Ignore if tab scans key doesn't exist
+    }
   } catch (err) {
     console.warn('[SiteStack Storage] Failed to clear history:', err);
+  }
+}
+
+export interface TabScanEntry {
+  url: string;
+  scanId: string;
+  result: ScanResult;
+  timestamp: number;
+}
+
+/**
+ * Retrieves the raw map of active tab scans
+ */
+export async function getTabScansMap(): Promise<Record<string, TabScanEntry>> {
+  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.get !== 'function') return {};
+  try {
+    const data = await chrome.storage.local.get(STORAGE_KEY_TAB_SCANS);
+    return (data && (data[STORAGE_KEY_TAB_SCANS] as Record<string, TabScanEntry>)) || {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Retrieves the scan result specifically associated with a browser tab.
+ * Validates that the tab's current URL matches the URL that was scanned,
+ * and ensures the scan record still exists in history.
+ */
+export async function getTabScan(
+  tabId: number,
+  currentUrl: string
+): Promise<ScanResult | null> {
+  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.get !== 'function' || !tabId) return null;
+
+  try {
+    const tabScans = await getTabScansMap();
+    const entry = tabScans[String(tabId)];
+    if (!entry) return null;
+
+    // Check if the tab's current URL matches the URL that was scanned
+    const normalizedScanned = normalizeScanUrl(entry.url);
+    const normalizedCurrent = normalizeScanUrl(currentUrl);
+
+    if (normalizedScanned !== normalizedCurrent) {
+      // Tab navigated to a new URL -> invalidate stale tab scan
+      delete tabScans[String(tabId)];
+      if (typeof chrome.storage.local.set === 'function') {
+        await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+      }
+      return null;
+    }
+
+    // Check if the scan record still exists in history (was not deleted)
+    const history = await getScanHistory();
+    const stillExists = history.some(
+      (h) => (h.id && h.id === entry.scanId) || h.timestamp === entry.result?.timestamp
+    );
+
+    if (!stillExists) {
+      delete tabScans[String(tabId)];
+      if (typeof chrome.storage.local.set === 'function') {
+        await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+      }
+      return null;
+    }
+
+    return entry.result;
+  } catch (err) {
+    console.warn('[SiteStack Storage] Failed to get tab scan:', err);
+    return null;
+  }
+}
+
+/**
+ * Associates a completed scan result with an active browser tab and exact URL.
+ */
+export async function setTabScan(
+  tabId: number,
+  currentUrl: string,
+  result: ScanResult
+): Promise<void> {
+  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.set !== 'function' || !tabId) return;
+
+  try {
+    const tabScans = await getTabScansMap();
+    tabScans[String(tabId)] = {
+      url: normalizeScanUrl(currentUrl),
+      scanId: result.id || `${result.domain}_${result.timestamp}` || 'unknown',
+      result,
+      timestamp: result.timestamp || Date.now(),
+    };
+    await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+  } catch (err) {
+    console.warn('[SiteStack Storage] Failed to set tab scan:', err);
+  }
+}
+
+/**
+ * Invalidates and removes the scan association for a specific tab.
+ */
+export async function invalidateTabScan(tabId: number): Promise<void> {
+  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.set !== 'function' || !tabId) return;
+
+  try {
+    const tabScans = await getTabScansMap();
+    if (tabScans[String(tabId)]) {
+      delete tabScans[String(tabId)];
+      await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+    }
+  } catch (err) {
+    console.warn('[SiteStack Storage] Failed to invalidate tab scan:', err);
+  }
+}
+
+/**
+ * Invalidates a tab's scan association if the tab's URL changed.
+ */
+export async function invalidateTabScanIfUrlChanged(
+  tabId: number,
+  newUrl: string
+): Promise<void> {
+  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.set !== 'function' || !tabId) return;
+
+  try {
+    const tabScans = await getTabScansMap();
+    const entry = tabScans[String(tabId)];
+    if (entry) {
+      if (normalizeScanUrl(entry.url) !== normalizeScanUrl(newUrl)) {
+        delete tabScans[String(tabId)];
+        await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+      }
+    }
+  } catch (err) {
+    console.warn('[SiteStack Storage] Failed to check URL change for tab scan:', err);
   }
 }
 

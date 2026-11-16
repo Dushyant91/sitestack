@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Sparkles, Play } from 'lucide-react';
 import { useScanner } from './hooks/useScanner';
 import { Header } from './components/Header';
 import { MetricsBanner } from './components/MetricsBanner';
@@ -18,8 +19,10 @@ export const App: React.FC = () => {
     isLoading,
     error,
     isCached,
+    isScanned,
     activeDomain,
     triggerScan,
+    clearActiveScan,
   } = useScanner();
 
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -96,12 +99,30 @@ export const App: React.FC = () => {
     setSearchQuery('');
   };
 
+  const handleHistoryModified = (deletedId?: string | number, isAllCleared?: boolean) => {
+    if (isAllCleared) {
+      setHistoryOverrideScan(null);
+      clearActiveScan();
+    } else if (deletedId) {
+      if (
+        activeScan?.id === deletedId ||
+        String(activeScan?.timestamp) === String(deletedId) ||
+        activeScan?.timestamp === deletedId ||
+        activeScan?.domain === deletedId
+      ) {
+        setHistoryOverrideScan(null);
+        clearActiveScan();
+      }
+    }
+  };
+
   return (
     <div className="w-[390px] h-[560px] bg-[#090a0f] text-zinc-100 flex flex-col overflow-hidden relative font-sans border border-white/[0.08] shadow-2xl">
       {/* Top Header */}
       <Header
         domain={historyOverrideScan ? historyOverrideScan.domain : activeDomain}
         isCached={isCached && !historyOverrideScan}
+        isScanned={Boolean(historyOverrideScan || isScanned)}
         timestamp={activeScan?.timestamp}
         isLoading={isLoading}
         isHistoryMode={Boolean(historyOverrideScan)}
@@ -131,6 +152,24 @@ export const App: React.FC = () => {
         <ScanRadar domain={activeDomain} />
       ) : error ? (
         <ErrorState error={error} onRetry={() => triggerScan(true)} />
+      ) : !isScanned && !historyOverrideScan ? (
+        /* Ready to Scan Zero-State */
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-3 shadow-lg shadow-indigo-500/5">
+            <Sparkles className="w-6 h-6 text-indigo-400" />
+          </div>
+          <h3 className="text-sm font-bold text-white mb-1">Ready to Scan</h3>
+          <p className="text-[11px] text-zinc-400 max-w-[260px] leading-relaxed mb-4">
+            Analyze <span className="text-zinc-200 font-mono font-medium">{activeDomain || 'this website'}</span> to inspect frontend frameworks, CMS platforms, analytics, and libraries.
+          </p>
+          <button
+            onClick={handleRescan}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-xs shadow-lg shadow-indigo-600/30 transition-all active:scale-[0.98] flex items-center gap-2"
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>Scan Website</span>
+          </button>
+        </div>
       ) : activeScan ? (
         <div className="flex-1 flex flex-col min-h-0">
           {/* Quick Metrics */}
@@ -179,7 +218,7 @@ export const App: React.FC = () => {
       {/* Bottom Footer Actions (JSON / CSV Export) */}
       <FooterActions
         scanResult={activeScan}
-        disabled={isLoading || Boolean(error)}
+        disabled={isLoading || Boolean(error) || (!isScanned && !historyOverrideScan)}
       />
 
       {/* Scan History Slide-over Drawer */}
@@ -187,6 +226,7 @@ export const App: React.FC = () => {
         <HistoryModal
           onClose={() => setIsHistoryOpen(false)}
           onSelectScan={handleSelectHistoryScan}
+          onHistoryModified={handleHistoryModified}
         />
       )}
     </div>

@@ -5,7 +5,9 @@ export type MessageType =
   | 'MSG_SCAN_SUCCESS'
   | 'MSG_SCAN_ERROR'
   | 'MSG_GET_CACHED_SCAN'
-  | 'MSG_CLEAR_SCAN_CACHE';
+  | 'MSG_CLEAR_SCAN_CACHE'
+  | 'MSG_GET_TAB_STATUS'
+  | 'MSG_TAB_STATUS';
 
 export type ScanErrorCode =
   | 'RESTRICTED_URL'
@@ -34,6 +36,12 @@ export interface GetCachedScanRequest {
   url?: string;
 }
 
+export interface GetTabStatusRequest {
+  type: 'MSG_GET_TAB_STATUS';
+  tabId?: number;
+  url?: string;
+}
+
 export interface ScanSuccessResponse {
   type: 'MSG_SCAN_SUCCESS';
   result: ScanResult;
@@ -44,8 +52,22 @@ export interface ScanErrorResponse {
   error: ScanError;
 }
 
-export type ExtensionRequestMessage = StartScanRequest | GetCachedScanRequest;
-export type ExtensionResponseMessage = ScanSuccessResponse | ScanErrorResponse;
+export interface TabStatusResponse {
+  type: 'MSG_TAB_STATUS';
+  isScanned: boolean;
+  result?: ScanResult;
+  url?: string;
+}
+
+export type ExtensionRequestMessage =
+  | StartScanRequest
+  | GetCachedScanRequest
+  | GetTabStatusRequest;
+
+export type ExtensionResponseMessage =
+  | ScanSuccessResponse
+  | ScanErrorResponse
+  | TabStatusResponse;
 
 /**
  * Validates if a target URL can be safely scanned

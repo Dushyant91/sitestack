@@ -8,7 +8,14 @@ import {
 } from '../../shared/messages';
 import { harvestIsolatedSignals, IsolatedProbePayload } from '../content/isolated-probe';
 import { harvestMainSignals } from '../content/main-probe';
-import { saveScanToStorage, getCachedScan } from '../storage/history';
+import {
+  saveScanToStorage,
+  getCachedScan,
+  getTabScan,
+  setTabScan,
+  invalidateTabScan,
+  invalidateTabScanIfUrlChanged,
+} from '../storage/history';
 
 /**
  * Tracks tabs currently being scanned to avoid race conditions
@@ -23,9 +30,9 @@ export async function performTabScan(
   tabUrl: string,
   forceFresh = false
 ): Promise<ScanResult> {
-  // Check cache first if not forced fresh
+  // Check tab-specific session cache first if not forced fresh
   if (!forceFresh) {
-    const cached = await getCachedScan(tabUrl);
+    const cached = await getTabScan(tabId, tabUrl);
     if (cached) {
       return cached;
     }
@@ -35,7 +42,7 @@ export async function performTabScan(
   if (activeScanTabs.has(tabId)) {
     // Wait briefly if scan is already in progress
     await new Promise((resolve) => setTimeout(resolve, 300));
-    const cached = await getCachedScan(tabUrl);
+    const cached = await getTabScan(tabId, tabUrl);
     if (cached) return cached;
   }
 
@@ -133,8 +140,9 @@ export async function performTabScan(
     // 4. Run Pure Detection Engine
     const scanResult = evaluateSignals(combinedSignals);
 
-    // 5. Persist to Local History Storage
+    // 5. Persist to Local History Storage & Tab Session Association
     await saveScanToStorage(scanResult);
+    await setTabScan(tabId, tabUrl, scanResult);
 
     return scanResult;
   } finally {
@@ -177,6 +185,24 @@ async function handleScanMessage(
         message: urlValidation.message || 'Cannot scan restricted page.',
         url: targetUrl,
       },
+    };
+  }
+
+  // Handle Read-Only Tab Status Query (Does NOT trigger any scanning)
+  if (request.type === 'MSG_GET_TAB_STATUS') {
+    const tabScan = await getTabScan(targetTabId, targetUrl);
+    if (tabScan) {
+      return {
+        type: 'MSG_TAB_STATUS',
+        isScanned: true,
+        result: tabScan,
+        url: targetUrl,
+      };
+    }
+    return {
+      type: 'MSG_TAB_STATUS',
+      isScanned: false,
+      url: targetUrl,
     };
   }
 
@@ -224,7 +250,11 @@ async function handleScanMessage(
 // Background Message Listener
 if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type === 'MSG_START_SCAN' || message?.type === 'MSG_GET_CACHED_SCAN') {
+    if (
+      message?.type === 'MSG_START_SCAN' ||
+      message?.type === 'MSG_GET_CACHED_SCAN' ||
+      message?.type === 'MSG_GET_TAB_STATUS'
+    ) {
       handleScanMessage(message as ExtensionRequestMessage)
         .then((response) => sendResponse(response))
         .catch((err) => {
@@ -238,5 +268,21 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
         });
       return true; // Keep channel open for async response
     }
+  });
+}
+
+// Invalidate tab scan when navigation occurs in a tab
+if (typeof chrome !== 'undefined' && chrome.tabs?.onUpdated) {
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    if (changeInfo.url) {
+      invalidateTabScanIfUrlChanged(tabId, changeInfo.url).catch(() => {});
+    }
+  });
+}
+
+// Invalidate tab scan when a tab is closed
+if (typeof chrome !== 'undefined' && chrome.tabs?.onRemoved) {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    invalidateTabScan(tabId).catch(() => {});
   });
 }

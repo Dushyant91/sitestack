@@ -1,10 +1,11 @@
 import React from 'react';
-import { RefreshCw, History, ArrowLeft, Clock } from 'lucide-react';
+import { RefreshCw, History, ArrowLeft, Clock, Play } from 'lucide-react';
 import { formatRelativeTime } from '../utils/formatters';
 
 interface HeaderProps {
   domain: string;
   isCached: boolean;
+  isScanned?: boolean;
   timestamp?: number;
   isLoading: boolean;
   isHistoryMode?: boolean;
@@ -16,6 +17,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   domain,
   isCached,
+  isScanned = false,
   timestamp,
   isLoading,
   isHistoryMode = false,
@@ -44,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono truncate max-w-[170px]">
-            <span className="truncate">{domain || 'Ready to scan'}</span>
+            <span className="truncate">{isScanned || isHistoryMode ? (domain || 'Ready to scan') : 'Ready to scan'}</span>
             {(isCached || isHistoryMode) && timestamp && (
               <span className="text-[9px] text-zinc-500 shrink-0">
                 ({formatRelativeTime(timestamp)})
@@ -63,6 +65,16 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <ArrowLeft className="w-3 h-3 text-violet-400" />
             <span className="text-[11px]">Active Tab</span>
+          </button>
+        ) : !isScanned ? (
+          <button
+            onClick={onRescan}
+            disabled={isLoading}
+            title="Scan website"
+            className="px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white transition-all flex items-center gap-1.5 text-xs font-medium shadow-md shadow-indigo-600/20 disabled:opacity-50"
+          >
+            <Play className="w-3 h-3 fill-current" />
+            <span className="text-[11px]">{isLoading ? 'Scanning' : 'Scan'}</span>
           </button>
         ) : (
           <button

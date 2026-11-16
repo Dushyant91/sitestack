@@ -28,9 +28,14 @@ import { formatRelativeTime } from '../utils/formatters';
 interface HistoryModalProps {
   onClose: () => void;
   onSelectScan: (scan: ScanResult) => void;
+  onHistoryModified?: (deletedId?: string | number, isAllCleared?: boolean) => void;
 }
 
-export const HistoryModal: React.FC<HistoryModalProps> = ({ onClose, onSelectScan }) => {
+export const HistoryModal: React.FC<HistoryModalProps> = ({
+  onClose,
+  onSelectScan,
+  onHistoryModified,
+}) => {
   const [history, setHistory] = useState<ScanResult[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +84,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ onClose, onSelectSca
         next.delete(String(idToDelete));
         return next;
       });
+      onHistoryModified?.(idToDelete, false);
     }
   };
 
@@ -88,6 +94,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ onClose, onSelectSca
       await clearScanHistory();
       setHistory([]);
       setSelectedIds(new Set());
+      onHistoryModified?.(undefined, true);
     }
   };
 
