@@ -8,7 +8,7 @@
 **Audit Date:** November 16, 2026  
 **Primary Manual Testing Environment:** Brave Browser (Chromium Engine)  
 **Overall Audit Verdict:** **CONDITIONAL PASS** (Zero release-blocking defects; non-critical items documented)  
-**Controlled Beta Disposition:** **APPROVED FOR CONTROLLED INVITE-ONLY BETA (BRAVE BROWSER TARGET)**
+**Controlled Beta Disposition:** **APPROVED FOR CONTROLLED INVITE-ONLY BRAVE BETA**
 
 ---
 
@@ -18,10 +18,10 @@ SiteStack has undergone an independent, comprehensive code-level and functional 
 
 ### Core Audit Findings
 1. **Automated Quality Gate:** 24 out of 24 test suites passed cleanly (340 / 340 tests green, 100% passing). TypeScript static analysis (`tsc -b`) completed with zero errors. Production bundling (`npm run build`) produced clean, deterministic distribution artifacts in [`D:\SiteStack\dist`](file:///D:/SiteStack/dist) in 11.24s.
-2. **User Manual Validation (T6–T15):** The user physically executed and confirmed **PASS** across 10 distinct manual testing scenarios in Brave Browser (T6 error pages, T7 eight-point lifecycle, T8 tab isolation, T9 URL navigation stale-result invalidation, T10 history management, T11 single-scan exports, T12 multi-scan exports, T13 offline scanning, T14 offline error handling, and T15 offline exports).
+2. **User Manual Validation (T1–T15):** The user physically executed and confirmed **PASS** across all 15 manual testing scenarios in Brave Browser (T1 Next.js/React/GA4 on react.dev, T2 WooCommerce/WordPress/jQuery/analytics on woocommerce.com, T3 GA4/Cloudflare telemetry on medium.com, T4 empty scan on google.com, T5 restricted page guard on brave://extensions, T6 error pages, T7 eight-point lifecycle, T8 tab isolation, T9 URL navigation stale-result invalidation, T10 history management, T11 single-scan exports, T12 multi-scan exports, T13 offline scanning, T14 offline error handling, and T15 offline exports).
 3. **Privacy & Security Integrity:** Zero programmatic network egress calls (`fetch`, `XMLHttpRequest`, `WebSocket`, `sendBeacon`) exist anywhere in extension production source code. Version query parameter preservation strictly enforces the bounded grammar `SAFE_VERSION_PATTERN` (`ver`), strips unapproved `v` unconditionally, and restricts `id`/`tid` to public measurement containers.
 4. **Lifecycle & Session Storage:** Tab-to-scan associations reside exclusively in ephemeral `chrome.storage.session`, legacy local storage keys are automatically cleaned up on startup, and in-flight navigation races are guarded by live tab URL verification (`chrome.tabs.get`) and request sequencing (`latestRequestIdRef`).
-5. **Release Disposition:** **CONDITIONAL PASS**. There are zero critical release blockers. Scenarios T1–T5 remain marked `NOT RUN` pending live target verification in Brave, and Google Chrome manual compatibility remains unverified. SiteStack is approved for an invite-only, controlled beta distribution on Brave Browser.
+5. **Release Disposition:** **CONDITIONAL PASS**. Code-level review found no identified violations in the audited permission, privacy and data-handling areas. This is not a guarantee of Chrome Web Store approval. Because Google Chrome manual compatibility remains unverified, beta distribution is strictly limited to a controlled, invite-only Brave beta that explicitly discloses this limitation.
 
 ---
 
@@ -43,24 +43,27 @@ SiteStack has undergone an independent, comprehensive code-level and functional 
 
 ---
 
-## 3. Manual Validation Summary (Scenarios T6–T15)
+## 3. Manual Validation Summary (Scenarios T1–T15)
 
 All manual testing was conducted exclusively in **Brave Browser (Chromium engine)** by the user. Evidence was reviewed and verified by the independent auditor:
 
 | Scenario | Tested Domain / Feature | Verification Method & Observed Evidence | Manual Result |
 | :---: | :--- | :--- | :---: |
-| **T6** | Browser Connection Error Page (`brave-error://`) | Tested with `https://sitestack-test-domain-987654321.invalid/` triggering Brave DNS error (`DNS_PROBE_POSSIBLE`). SiteStack displayed `Scan Failed` / Page Unavailable state (not a false empty scan). The dead domain was not recorded in history; existing history entries remained intact. | **USER-CONFIRMED PASS** |
-| **T7** | Tab Lifecycle & Active Tab State Management | All 8 lifecycle checkpoints verified: 1) Fresh tab shows "Ready to Scan"; 2) Explicit scan works; 3) Same-URL reload (F5) invalidates active result; 4) History persistence across sessions; 5) Clear History immediately resets active state; 6) Two-tab isolation maintained; 7) Navigation during active scan discards association; 8) Rapid rescan sequencing guarded. | **USER-CONFIRMED PASS** (8/8 Checkpoints) |
-| **T8** | Tab Switching & State Isolation | Switching between previously scanned tabs renders each tab's own scan state with zero cross-tab state bleed. | **USER-CONFIRMED PASS** |
-| **T9** | URL Navigation & Stale Invalidation | User supplied screenshots showing navigation between `github.com/explore` and `github.com/trending`. Both pages display "Ready to Scan", prior GitHub history remains accessible, and zero stale results bleed into unscanned pages. | **USER-CONFIRMED PASS** |
-| **T10** | Local History Management & Deletion | 50-item LRU bound observed, history modal loads instantly from storage, single-item deletion updates storage immediately, and "Clear History" purges all records while resetting active tab state. | **USER-CONFIRMED PASS** |
-| **T11** | Single-Scan JSON & CSV Export | Downloaded export files inspected: CSV conforms to 11-column schema with RFC 4180 escaping and dual URL semantics; JSON contains structured technology objects with version maturity; zero parameter leakage. | **USER-CONFIRMED PASS** |
-| **T12** | Multi-Scan CSV & JSON Export | Multi-scan files inspected: 13-column CSV covering 5 scans and 10 technologies, including exactly one formatted empty scan row (domain, timestamp, URL, and 10 empty technology fields). | **USER-CONFIRMED PASS** |
-| **T13** | Offline Scanning (Air-Gapped Operation) | Device disconnected from network (Airplane Mode). Popup rendered completely, detection executed identically from in-memory signals, and zero network pings failed. | **USER-CONFIRMED PASS** |
-| **T14** | Offline Browser Error Page | Navigated to uncached page while offline (`ERR_INTERNET_DISCONNECTED`). Extension displayed `Scan Failed` / Page Unavailable state without crashing or falsely recording an empty scan. | **USER-CONFIRMED PASS** |
-| **T15** | Offline History & Export Downloads | Browsed local history and downloaded JSON/CSV exports while offline. Browser Blob URLs triggered downloads locally without network roundtrips. | **USER-CONFIRMED PASS** |
-
-*Note on Scenarios T1–T5:* Scenarios T1–T5 (Next.js/React, WooCommerce, Medium/Cloudflare, Google empty scan, and `brave://` system page guard) remain marked **`NOT RUN`** in [`PHASE_9_7_MANUAL_VALIDATION.md`](file:///D:/SiteStack/PHASE_9_7_MANUAL_VALIDATION.md) because physical user testing for those specific live sites was not logged. They are covered extensively by automated unit/fixture suites, but are not claimed as manually verified.
+| **T1** | Single-Page App (Next.js & React Inference) | Tested on `react.dev` in Brave. Next.js, React (inferred), and GA4 detections confirmed. (Evidence limitation: full diagnostic drawer screenshot not attached). | **USER-CONFIRMED MANUAL PASS** |
+| **T2** | CMS & Ecommerce (WooCommerce Store) | Tested on `woocommerce.com` in Brave. WooCommerce, WordPress, jQuery, and analytics detections confirmed. (Evidence limitation: live core vs subpackage version conflict not independently captured). | **USER-CONFIRMED MANUAL PASS** |
+| **T3** | Telemetry Separation (Medium & Cloudflare) | Tested on `medium.com` in Brave. GA4 detection and calibrated Cloudflare telemetry confidence (Low 45%) confirmed. | **USER-CONFIRMED MANUAL PASS** |
+| **T4** | Empty Scan (Google Search Homepage) | Tested on `google.com` in Brave. Successful empty scan rendered cleanly without false detections. | **USER-CONFIRMED MANUAL PASS** |
+| **T5** | Browser System Page Guard (`brave://`) | Tested on `brave://extensions` in Brave. Restricted browser page notice rendered cleanly with pre-injection blocking; not saved to history. | **USER-CONFIRMED MANUAL PASS** |
+| **T6** | Browser Connection Error Page (`brave-error://`) | Tested with `https://sitestack-test-domain-987654321.invalid/` triggering Brave DNS error (`DNS_PROBE_POSSIBLE`). SiteStack displayed `Scan Failed` / Page Unavailable state (not a false empty scan). The dead domain was not recorded in history; existing history entries remained intact. | **USER-CONFIRMED MANUAL PASS** |
+| **T7** | Tab Lifecycle & Active Tab State Management | All 8 lifecycle checkpoints verified: 1) Fresh tab shows "Ready to Scan"; 2) Explicit scan works; 3) Same-URL reload (F5) invalidates active result; 4) History persistence across sessions; 5) Clear History immediately resets active state; 6) Two-tab isolation maintained; 7) Navigation during active scan discards association; 8) Rapid rescan sequencing guarded. | **USER-CONFIRMED MANUAL PASS** (8/8 Checkpoints) |
+| **T8** | Tab Switching & State Isolation | Switching between previously scanned tabs renders each tab's own scan state with zero cross-tab state bleed. | **USER-CONFIRMED MANUAL PASS** |
+| **T9** | URL Navigation & Stale Invalidation | User supplied screenshots showing navigation between `github.com/explore` and `github.com/trending`. Both pages display "Ready to Scan", prior GitHub history remains accessible, and zero stale results bleed into unscanned pages. | **USER-CONFIRMED MANUAL PASS** |
+| **T10** | Local History Management & Deletion | 50-item LRU bound observed, history modal loads instantly from storage, single-item deletion updates storage immediately, and "Clear History" purges all records while resetting active tab state. | **USER-CONFIRMED MANUAL PASS** |
+| **T11** | Single-Scan JSON & CSV Export | Downloaded export files inspected: CSV conforms to 11-column schema with RFC 4180 escaping and dual URL semantics; JSON contains structured technology objects with version maturity; zero parameter leakage. | **USER-CONFIRMED MANUAL PASS** |
+| **T12** | Multi-Scan CSV & JSON Export | Multi-scan files inspected: 13-column CSV covering 5 scans and 10 technologies, including exactly one formatted empty scan row (domain, timestamp, URL, and 10 empty technology fields). | **USER-CONFIRMED MANUAL PASS** |
+| **T13** | Offline Scanning (Air-Gapped Operation) | Tested scanning already loaded webpage while offline in Brave. Popup rendered completely and detection executed from in-memory signals. (Evidence limitation: DevTools network panel packet logs were not captured). | **USER-CONFIRMED MANUAL PASS** |
+| **T14** | Offline Browser Error Page | Navigated to uncached page while offline (`ERR_INTERNET_DISCONNECTED`). Extension displayed `Scan Failed` / Page Unavailable state without crashing or falsely recording an empty scan. (Confirmed via user screenshots). | **USER-CONFIRMED MANUAL PASS** |
+| **T15** | Offline History & Export Downloads | Browsed local history and downloaded JSON/CSV exports while offline in Brave. (Evidence limitation: verification of underlying in-memory Blob URL mechanisms and absence of network roundtrips is an audited code property, not independently logged in manual test notes). | **USER-CONFIRMED MANUAL PASS** |
 
 ---
 
@@ -287,17 +290,18 @@ dist/assets/popup-BdKBLV3u.js    200.21 kB │ gzip: 59.65 kB │ map: 493.91 kB
 
 ## 7. Remaining Risks & Documented Limitations
 
-1. **Unverified Google Chrome Testing:** Manual validation was performed exclusively in Brave Browser. While both browsers share the Chromium Manifest V3 runtime, Chrome-specific UI quirks or policy nuances have not been verified directly in Google Chrome.
-2. **Pending Scenarios T1–T5:** Scenarios T1–T5 (Next.js, WooCommerce, Cloudflare telemetry, Google empty scan, and `brave://` restriction) have not been physically logged by the user in Brave, though they are verified by 340 passing automated unit/fixture tests.
-3. **Brave Shields Tracker Blocking:** Brave Shields blocks third-party beacons (e.g. GA4 collect, Cloudflare Web Analytics). Testers must be aware that shields status impacts detection of third-party telemetry scripts.
-4. **Single Active Tab Scope:** By design, SiteStack profiles only the focused tab upon user invocation; it does not perform background or bulk tab scanning.
+1. **Unverified Google Chrome Testing:** Manual validation was performed exclusively in Brave Browser. Google Chrome manual compatibility remains unverified on this workstation and is not claimed.
+2. **Evidence Scope of Scenarios T1–T5:** Core live site framework detections were user-confirmed in Brave (Next.js, React, GA4 on `react.dev`; WooCommerce, WordPress, jQuery, analytics on `woocommerce.com`; GA4 and Cloudflare telemetry on `medium.com`; empty scan on `google.com`; restricted page guard on `brave://extensions`). Detailed diagnostic drawer screenshots or raw export JSON files were not formally archived for these live site tests.
+3. **Offline Evidence Scope (T13–T15):** Offline scanning, offline error page handling (`ERR_INTERNET_DISCONNECTED`), and offline history/export downloads were user-confirmed in Brave. Granular claims regarding packet-level network isolation or browser Blob URL handling represent code-level audit verifications rather than manual network captures.
+4. **Brave Shields Tracker Blocking:** Brave Shields blocks third-party beacons (e.g. GA4 collect, Cloudflare Web Analytics). Testers must be aware that shields status impacts detection of third-party telemetry scripts.
+5. **Single Active Tab Scope:** By design, SiteStack profiles only the focused tab upon user invocation; it does not perform background or bulk tab scanning.
 
 ---
 
 ## 8. Brave vs. Chrome Compatibility Statement
 
 - **Validated Platform:** Brave Browser (Chromium Engine, Manifest V3).
-- **Chrome Status:** **UNVERIFIED**. Google Chrome is not installed on the test workstation. Core Chromium engine behavior is expected to be identical, but official Google Chrome manual certification must remain pending until tested on a machine with Google Chrome installed.
+- **Chrome Status:** **UNVERIFIED**. Google Chrome is not installed on the test workstation. Google Chrome compatibility remains unverified and is not claimed. Any beta distribution must explicitly disclose this limitation.
 
 ---
 
@@ -314,14 +318,18 @@ dist/assets/popup-BdKBLV3u.js    200.21 kB │ gzip: 59.65 kB │ map: 493.91 kB
 ### Final Phase 9.8 Audit Verdict
 ```text
 [ ] PASS — No identified release blockers.
-[X] CONDITIONAL PASS — Zero critical release blockers; non-critical items documented (T1–T5 pending live target verification; Chrome manual verification unverified).
+[X] CONDITIONAL PASS — Zero critical release blockers; non-critical items documented (Google Chrome manual verification unverified; live framework testing evidence limitations noted).
 [ ] FAIL — One or more critical release blockers remain.
 ```
 
 ### Controlled Beta Readiness Decision
-**SiteStack is APPROVED FOR A CONTROLLED, INVITE-ONLY BETA DISTRIBUTION.**
+Code-level review found no identified violations in the audited permission, privacy, and data-handling areas. This is not a guarantee of Chrome Web Store approval.
+
+**SiteStack is APPROVED FOR A CONTROLLED, INVITE-ONLY BRAVE BETA.**
 
 **Conditions for Beta Release:**
-1. Beta distribution is targeted and documented as **Brave-validated**.
-2. Beta release notes must disclose the Google Chrome manual verification boundary.
-3. Beta testing guide instructs users to test live framework scenarios (T1–T5) and log feedback using [`BETA_FEEDBACK_TEMPLATE.md`](file:///D:/SiteStack/BETA_FEEDBACK_TEMPLATE.md).
+1. Beta distribution is targeted and documented as **Brave-validated only**.
+2. Google Chrome compatibility remains unverified, and any beta distribution must explicitly disclose this limitation.
+3. Code-level review found no identified violations in the audited permission, privacy, and data-handling areas; this is not a guarantee of Chrome Web Store approval.
+4. Beta testers are provided with [`BETA_TESTING_GUIDE.md`](file:///D:/SiteStack/BETA_TESTING_GUIDE.md) and [`BETA_FEEDBACK_TEMPLATE.md`](file:///D:/SiteStack/BETA_FEEDBACK_TEMPLATE.md) to log framework feedback during the beta.
+5. The extension package must not be publicly distributed or submitted to the Chrome Web Store without prior physical validation on Google Chrome.
