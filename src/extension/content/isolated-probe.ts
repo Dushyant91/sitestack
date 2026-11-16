@@ -5,6 +5,8 @@ export interface IsolatedProbePayload {
   meta: HarvestedMeta[];
   dom: HarvestedDomElement[];
   resources: string[];
+  isErrorPage?: boolean;
+  errorCode?: string;
 }
 
 /**
@@ -15,6 +17,60 @@ export interface IsolatedProbePayload {
  */
 export function harvestIsolatedSignals(): IsolatedProbePayload {
   const url = typeof window !== 'undefined' ? window.location.href : '';
+
+  // 0. Detect Browser-Generated Network/Connection Error Pages (Chrome, Brave, Edge)
+  try {
+    const docHref = typeof window !== 'undefined' && window.location ? window.location.href : '';
+    const docUri = typeof document !== 'undefined' ? (document.documentURI || '') : '';
+    const docProtocol = typeof window !== 'undefined' && window.location ? window.location.protocol : '';
+
+    let isErrorPage = false;
+    let errorCode: string | undefined;
+
+    if (
+      docProtocol === 'chrome-error:' ||
+      docHref.startsWith('chrome-error://') ||
+      docUri.startsWith('chrome-error://') ||
+      docHref.startsWith('edge-error://') ||
+      docUri.startsWith('edge-error://') ||
+      docHref.startsWith('brave-error://') ||
+      docUri.startsWith('brave-error://')
+    ) {
+      isErrorPage = true;
+      errorCode = 'BROWSER_ERROR_PAGE';
+    }
+
+    if (typeof document !== 'undefined') {
+      const errorEl = document.querySelector('.error-code, [jscontent="errorCode"], #main-frame-error .error-code');
+      if (errorEl) {
+        const text = (errorEl.textContent || '').trim();
+        if (
+          text.startsWith('ERR_') ||
+          text.startsWith('DNS_PROBE_') ||
+          text.startsWith('NET::ERR_')
+        ) {
+          isErrorPage = true;
+          errorCode = text;
+        }
+      } else if (document.getElementById('main-frame-error')) {
+        isErrorPage = true;
+        errorCode = 'ERR_CONNECTION_FAILED';
+      }
+    }
+
+    if (isErrorPage) {
+      return {
+        url,
+        meta: [],
+        dom: [],
+        resources: [],
+        isErrorPage: true,
+        errorCode,
+      };
+    }
+  } catch {
+    // Graceful fallback if DOM is in restricted state
+  }
 
   /**
    * Known structural DOM selectors to probe without parsing full page body.

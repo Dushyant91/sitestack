@@ -10,6 +10,7 @@ export type MessageType =
 export type ScanErrorCode =
   | 'RESTRICTED_URL'
   | 'UNSUPPORTED_SCHEME'
+  | 'PAGE_UNAVAILABLE'
   | 'TAB_NOT_FOUND'
   | 'INJECTION_FAILED'
   | 'EVALUATION_ERROR';
@@ -63,6 +64,19 @@ export function validateScannableUrl(url: string | undefined): {
   }
 
   const trimmed = url.trim().toLowerCase();
+
+  // Browser network and connection error pages
+  if (
+    trimmed.startsWith('chrome-error://') ||
+    trimmed.startsWith('edge-error://') ||
+    trimmed.startsWith('brave-error://')
+  ) {
+    return {
+      scannable: false,
+      code: 'PAGE_UNAVAILABLE',
+      message: 'This page cannot be analyzed because the website failed to load or connection was lost.',
+    };
+  }
 
   if (
     trimmed.startsWith('chrome://') ||
