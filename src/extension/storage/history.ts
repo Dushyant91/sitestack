@@ -1,71 +1,15 @@
-import { ScanResult, DetectedTechnology } from '../../engine/types';
+import { ScanResult, DetectedTechnology, SignalEvidence } from '../../engine/types';
+import {
+  normalizeScanUrl,
+  sanitizeResourceUrl,
+  sanitizeResourceEvidenceString,
+} from '../../shared/url';
+
+export { normalizeScanUrl, sanitizeResourceUrl, sanitizeResourceEvidenceString };
 
 export const STORAGE_KEY_HISTORY = 'sitestack_history';
 export const MAX_HISTORY_ITEMS = 50;
 export const RESCAN_DUPLICATE_THRESHOLD_MS = 60000; // 60 seconds debounce window for duplicate rescans
-
-/**
- * Known marketing, tracking, referral, and sensitive query parameter keys to sanitize
- */
-const TRACKING_QUERY_PARAMS = new Set([
-  'utm_source',
-  'utm_medium',
-  'utm_campaign',
-  'utm_term',
-  'utm_content',
-  'utm_id',
-  'fbclid',
-  'gclid',
-  'gclsrc',
-  'dclid',
-  'msclkid',
-  'twclid',
-  'yclid',
-  'mc_cid',
-  'mc_eid',
-  '_ga',
-  '_gl',
-  'ref',
-  'ref_src',
-  'ref_url',
-  'token',
-  'access_token',
-  'auth',
-  'key',
-  'api_key',
-  'secret',
-  'session',
-  'session_id',
-  'sid',
-]);
-
-/**
- * Normalizes a scan URL by:
- * - Preserving protocol, hostname, port, and pathname
- * - Stripping marketing/tracking query parameters (e.g. utm_source, gclid, fbclid)
- * - Stripping sensitive query parameters (tokens, keys, auth)
- * - Stripping hash fragments (#...)
- */
-export function normalizeScanUrl(rawUrl: string): string {
-  if (!rawUrl || typeof rawUrl !== 'string') return '';
-  const trimmed = rawUrl.trim();
-  try {
-    const url = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`);
-    const cleanParams = new URLSearchParams();
-
-    url.searchParams.forEach((val, key) => {
-      const lower = key.toLowerCase();
-      if (!TRACKING_QUERY_PARAMS.has(lower) && !lower.startsWith('utm_')) {
-        cleanParams.append(key, val);
-      }
-    });
-
-    const search = cleanParams.toString();
-    return `${url.protocol}//${url.host}${url.pathname}${search ? `?${search}` : ''}`;
-  } catch {
-    return trimmed.split('#')[0];
-  }
-}
 
 /**
  * Normalizes URL or domain string to a clean lowercased domain key
@@ -135,7 +79,16 @@ export function sanitizeScanResult(raw: unknown): ScanResult | null {
             : undefined,
           confidenceReason: typeof t.confidenceReason === 'string' ? t.confidenceReason : undefined,
           isInferred: Boolean(t.isInferred || t.detectionType === 'inferred'),
-          evidence: Array.isArray(t.evidence) ? (t.evidence as DetectedTechnology['evidence']) : [],
+          evidence: (Array.isArray(t.evidence) ? (t.evidence as SignalEvidence[]) : []).map((ev) => {
+            if (ev && typeof ev === 'object' && ev.type === 'resource') {
+              return {
+                ...ev,
+                source: sanitizeResourceEvidenceString(ev.source),
+                matchedValue: ev.matchedValue ? sanitizeResourceUrl(ev.matchedValue) : undefined,
+              };
+            }
+            return ev;
+          }),
           website: typeof t.website === 'string' ? t.website : '',
           icon: typeof t.icon === 'string' ? t.icon : '',
           description: typeof t.description === 'string' ? t.description : '',

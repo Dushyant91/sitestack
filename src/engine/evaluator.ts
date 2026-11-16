@@ -9,6 +9,7 @@ import {
 } from './types';
 import { ALL_RULES, getRuleById } from './rules/registry';
 import { getNestedProperty, extractVersion, classifyVersionMaturity } from './version';
+import { sanitizeResourceUrl, normalizeScanUrl } from '../shared/url';
 
 /**
  * Score thresholds
@@ -45,20 +46,22 @@ function formatMatchedValue(val: unknown): string {
 }
 
 /**
- * Truncates long resource URLs while preserving hostname, path, and script name
+ * Truncates long resource URLs while preserving hostname, path, and script name.
+ * Automatically sanitizes query parameters to prevent leakage of credentials or tracking IDs.
  */
 function truncateResourceUrl(url: string, maxLength = 85): string {
-  if (url.length <= maxLength) return url;
+  const clean = sanitizeResourceUrl(url);
+  if (clean.length <= maxLength) return clean;
   try {
-    const parsed = new URL(url.startsWith('http') ? url : `https://example.com${url.startsWith('/') ? '' : '/'}${url}`);
-    const cleanBase = `${url.startsWith('http') ? parsed.origin : ''}${parsed.pathname}`;
+    const parsed = new URL(clean.startsWith('http') ? clean : `https://example.com${clean.startsWith('/') ? '' : '/'}${clean}`);
+    const cleanBase = `${clean.startsWith('http') ? parsed.origin : ''}${parsed.pathname}`;
     if (parsed.search && cleanBase.length < maxLength) {
       const remaining = maxLength - cleanBase.length;
       return `${cleanBase}?${parsed.search.slice(1, Math.max(1, remaining - 4))}...`;
     }
-    return '...' + url.slice(-(maxLength - 3));
+    return '...' + clean.slice(-(maxLength - 3));
   } catch {
-    return '...' + url.slice(-(maxLength - 3));
+    return '...' + clean.slice(-(maxLength - 3));
   }
 }
 
@@ -158,10 +161,11 @@ export function evaluateRule(
           // Primary resource from an origin gets full weight; secondary matching URLs from same bundle root get supporting weight (max 5pts)
           const effectiveWeight = isDuplicateOrigin ? Math.min(5, Math.round(r.weight * 0.15)) : r.weight;
 
+          const sanitizedUrl = sanitizeResourceUrl(url);
           matchedEvidence.push({
             type: 'resource',
-            source: truncateResourceUrl(url),
-            matchedValue: url,
+            source: truncateResourceUrl(sanitizedUrl),
+            matchedValue: sanitizedUrl,
             weight: effectiveWeight,
           });
           matchedSignalTypes.add('resource');
@@ -476,7 +480,7 @@ export function evaluateSignals(
   }
 
   return {
-    url: signals.url,
+    url: normalizeScanUrl(signals.url),
     domain,
     timestamp: Date.now(),
     technologies,

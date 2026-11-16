@@ -1,5 +1,9 @@
 import { ScanResult, VersionMaturity } from '../../engine/types';
-import { normalizeScanUrl } from '../../extension/storage/history';
+import {
+  normalizeScanUrl,
+  sanitizeResourceUrl,
+  sanitizeResourceEvidenceString,
+} from '../../shared/url';
 
 function triggerDownload(blob: Blob, filename: string): void {
   if (typeof document === 'undefined') return;
@@ -96,9 +100,11 @@ export function formatExportJson(scanResult: ScanResult): StandardExportPayload 
       confidenceReason: t.confidenceReason || null,
       evidenceSummary: t.evidence.map((e) => ({
         type: e.type,
-        source: e.source,
+        source: e.type === 'resource' ? sanitizeResourceEvidenceString(e.source) : e.source,
         weight: e.weight,
-        matchedValue: e.matchedValue,
+        matchedValue: e.type === 'resource' && e.matchedValue
+          ? sanitizeResourceUrl(e.matchedValue)
+          : e.matchedValue,
       })),
       technologyWebsite: t.website,
       website: t.website,
@@ -139,8 +145,12 @@ export function formatExportCsv(scanResult: ScanResult): string {
   const rows = scanResult.technologies.map((t) => {
     const rawSummary = t.evidence
       .map((e) => {
-        const val = e.matchedValue && e.matchedValue !== 'present' ? ` [${e.matchedValue}]` : '';
-        return `${e.source}${val} (${e.weight}pts)`;
+        const cleanSource = e.type === 'resource' ? sanitizeResourceEvidenceString(e.source) : e.source;
+        const cleanVal = e.type === 'resource' && e.matchedValue
+          ? sanitizeResourceUrl(e.matchedValue)
+          : e.matchedValue;
+        const val = cleanVal && cleanVal !== 'present' ? ` [${cleanVal}]` : '';
+        return `${cleanSource}${val} (${e.weight}pts)`;
       })
       .join('; ');
     const evidenceSummary = rawSummary.length > 250 ? rawSummary.slice(0, 247) + '...' : rawSummary;
@@ -245,8 +255,12 @@ export function formatMultiScanExportCsv(scanResults: ScanResult[]): string {
       for (const t of scan.technologies) {
         const rawSummary = t.evidence
           .map((e) => {
-            const val = e.matchedValue && e.matchedValue !== 'present' ? ` [${e.matchedValue}]` : '';
-            return `${e.source}${val} (${e.weight}pts)`;
+            const cleanSource = e.type === 'resource' ? sanitizeResourceEvidenceString(e.source) : e.source;
+            const cleanVal = e.type === 'resource' && e.matchedValue
+              ? sanitizeResourceUrl(e.matchedValue)
+              : e.matchedValue;
+            const val = cleanVal && cleanVal !== 'present' ? ` [${cleanVal}]` : '';
+            return `${cleanSource}${val} (${e.weight}pts)`;
           })
           .join('; ');
         const evidenceSummary = rawSummary.length > 250 ? rawSummary.slice(0, 247) + '...' : rawSummary;
