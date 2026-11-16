@@ -103,7 +103,10 @@ export function sanitizeScanResult(raw: unknown): ScanResult | null {
     ? candidate.timestamp
     : Date.now();
 
-  const scanDurationMs = typeof candidate.scanDurationMs === 'number' ? candidate.scanDurationMs : 0;
+  const engineEvaluationDurationMs = typeof candidate.engineEvaluationDurationMs === 'number'
+    ? candidate.engineEvaluationDurationMs
+    : (typeof candidate.scanDurationMs === 'number' ? candidate.scanDurationMs : 0);
+  const scanDurationMs = engineEvaluationDurationMs;
 
   // Validate technologies array
   const rawTechs = Array.isArray(candidate.technologies) ? candidate.technologies : [];
@@ -118,6 +121,9 @@ export function sanitizeScanResult(raw: unknown): ScanResult | null {
           name: t.name,
           category: (typeof t.category === 'string' ? t.category : 'library') as DetectedTechnology['category'],
           version: typeof t.version === 'string' ? t.version : undefined,
+          versionMaturity: typeof t.versionMaturity === 'string'
+            ? (t.versionMaturity as DetectedTechnology['versionMaturity'])
+            : undefined,
           confidenceScore: typeof t.confidenceScore === 'number' ? t.confidenceScore : 50,
           confidenceTier: (['high', 'medium', 'low'].includes(t.confidenceTier as string)
             ? t.confidenceTier
@@ -159,6 +165,7 @@ export function sanitizeScanResult(raw: unknown): ScanResult | null {
     url: url || `https://${domain}`,
     domain,
     timestamp,
+    engineEvaluationDurationMs,
     scanDurationMs,
     technologies,
     stats: {

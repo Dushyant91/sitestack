@@ -69,8 +69,11 @@ export const ecommerceRules: TechRule[] = [
         regex: /WooCommerce\s*([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)/i,
       },
       fromResource: {
-        urlRegex: /\/plugins\/woocommerce\/.*?ver=([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)/i,
+        // Priority 1: WooCommerce Core frontend script (e.g. assets/js/frontend/woocommerce.min.js?ver=7.1.4)
+        urlRegex: /\/plugins\/woocommerce\/(?:assets\/(?:js\/frontend\/)?woocommerce(?:\.min)?\.js.*?ver=)([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)/i,
         captureGroup: 1,
+        // Priority 2 / Fallback: Any other WooCommerce asset script if core script is not loaded
+        fallbackUrlRegex: /\/plugins\/woocommerce\/.*?ver=([0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?)/i,
       },
     },
   },

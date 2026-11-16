@@ -78,8 +78,7 @@ export const libraryRules: TechRule[] = [
     versionExtraction: {
       fromGlobal: 'bootstrap.Tooltip.VERSION',
       fromResource: {
-        urlRegex: /bootstrap(?:[/-]|@)([\d.]+)/i,
-        captureGroup: 1,
+        urlRegex: /(?:bootstrap(?:[/-]|@)([\d.]+)|(?:^|\/)docs\/([\d.]+)\/dist\/(?:css|js)\/bootstrap(?:\.bundle)?(?:\.rtl)?(?:\.min)?\.(?:css|js))/i,
       },
     },
   },

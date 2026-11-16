@@ -35,15 +35,27 @@ export interface ExportRecordJson {
     weight: number;
     matchedValue?: string;
   }>;
+  /** Canonical reference URL for the detected technology vendor or project */
   technologyWebsite: string;
-  website: string; // Backward compatibility alias for technologyWebsite
+  /** @deprecated Backward-compatible alias for technologyWebsite */
+  website: string;
 }
 
 export interface StandardExportPayload {
   scannedWebsite: string;
   url: string;
-  domain: string; // Backward compatibility alias for scannedWebsite
+  /** @deprecated Backward-compatible alias for scannedWebsite */
+  domain: string;
   timestamp: number;
+  /**
+   * Synchronous detection engine evaluation latency in milliseconds (pure CPU time spent evaluating rules and scoring).
+   * Does not include browser tab querying, probe script injection, or storage persistence.
+   */
+  engineEvaluationDurationMs: number;
+  /**
+   * @deprecated Backward-compatible alias for engineEvaluationDurationMs.
+   * Pure synchronous rule-engine evaluation time in milliseconds.
+   */
   scanDurationMs: number;
   technologies: ExportRecordJson[];
 }
@@ -59,12 +71,16 @@ export interface MultiScanExportPayload {
  */
 export function formatExportJson(scanResult: ScanResult): StandardExportPayload {
   const scannedDomain = scanResult.domain;
+  const evalDuration = typeof scanResult.engineEvaluationDurationMs === 'number'
+    ? scanResult.engineEvaluationDurationMs
+    : scanResult.scanDurationMs;
   return {
     scannedWebsite: scannedDomain,
     url: normalizeScanUrl(scanResult.url),
     domain: scannedDomain,
     timestamp: scanResult.timestamp,
-    scanDurationMs: scanResult.scanDurationMs,
+    engineEvaluationDurationMs: evalDuration,
+    scanDurationMs: evalDuration,
     technologies: scanResult.technologies.map((t) => ({
       scannedWebsite: scannedDomain,
       technology: t.name,

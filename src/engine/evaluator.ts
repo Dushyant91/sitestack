@@ -8,7 +8,7 @@ import {
   SignalType,
 } from './types';
 import { ALL_RULES, getRuleById } from './rules/registry';
-import { getNestedProperty, extractVersion } from './version';
+import { getNestedProperty, extractVersion, classifyVersionMaturity } from './version';
 
 /**
  * Score thresholds
@@ -237,6 +237,7 @@ export function evaluateRule(
 
   // Version Extraction
   const version = extractVersion(rule.versionExtraction, signals);
+  const versionMaturity = version ? classifyVersionMaturity(version) : undefined;
   const confidenceTier = getConfidenceTier(confidenceScore);
   const distinctClasses = Array.from(matchedSignalTypes);
 
@@ -286,6 +287,7 @@ export function evaluateRule(
     name: rule.name,
     category: rule.category,
     version,
+    versionMaturity,
     confidenceScore,
     confidenceTier,
     detectionType: 'direct',
@@ -476,6 +478,7 @@ export function evaluateSignals(
       medium,
       low,
     },
+    engineEvaluationDurationMs: scanDurationMs,
     scanDurationMs,
   };
 }

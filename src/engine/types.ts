@@ -10,6 +10,8 @@ export type TechCategory =
 
 export type ConfidenceTier = 'high' | 'medium' | 'low';
 
+export type VersionMaturity = 'stable' | 'prerelease' | 'development' | 'unknown';
+
 export type SignalType = 'global' | 'meta' | 'dom' | 'resource' | 'header' | 'inferred';
 
 export interface SignalEvidence {
@@ -53,7 +55,11 @@ export interface HeaderRuleSignal {
 export interface VersionExtractor {
   fromGlobal?: string;
   fromMeta?: { name: string; regex: RegExp };
-  fromResource?: { urlRegex: RegExp; captureGroup: number };
+  fromResource?: {
+    urlRegex: RegExp;
+    captureGroup?: number;
+    fallbackUrlRegex?: RegExp;
+  };
   fromDom?: { selector: string; attribute?: string; regex: RegExp };
 }
 
@@ -101,6 +107,7 @@ export interface DetectedTechnology {
   name: string;
   category: TechCategory;
   version?: string;
+  versionMaturity?: VersionMaturity; // Classification of version maturity ('stable' | 'prerelease' | 'development' | 'unknown')
   confidenceScore: number; // 0 - 100
   confidenceTier: ConfidenceTier;
   detectionType: 'direct' | 'inferred';
@@ -127,8 +134,13 @@ export interface ScanResult {
     low: number;
   };
   /**
-   * Detection engine evaluation latency in milliseconds (pure CPU time spent evaluating rules and scoring).
+   * Synchronous detection engine evaluation latency in milliseconds (pure CPU time spent evaluating rules and scoring).
    * Does not include browser tab querying, probe script injection, or storage persistence.
+   */
+  engineEvaluationDurationMs?: number;
+  /**
+   * Deprecated alias for engineEvaluationDurationMs. Kept for backward compatibility.
+   * Pure synchronous rule-engine evaluation time in milliseconds.
    */
   scanDurationMs: number;
 }

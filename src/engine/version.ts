@@ -1,4 +1,4 @@
-import { VersionExtractor, HarvestedSignals } from './types';
+import { VersionExtractor, HarvestedSignals, VersionMaturity } from './types';
 
 /**
  * Standard semantic version regex: matches 1.2, 1.2.3, 1.2.3-alpha.1, 7.2-beta5-65440
@@ -57,6 +57,47 @@ export function cleanVersion(rawVersion: string): string | undefined {
 }
 
 /**
+ * Classifies the maturity of a detected software version string into:
+ * - 'development': Unstable development builds, nightly releases, canaries, or commit snapshots (e.g. 11.4.0-dev.20261116, 1.0.0-nightly)
+ * - 'prerelease': Feature-frozen pre-releases such as alphas, betas, release candidates, or preview builds (e.g. 14.0.0-rc.2, 18.3.1-beta.0)
+ * - 'stable': Standard production release (e.g. 7.1.4, 18.3.1, 6.0)
+ * - 'unknown': Non-semver identifiers, tracking tags (e.g. GTM-XXXX), or missing version strings
+ */
+export function classifyVersionMaturity(version?: string): VersionMaturity {
+  if (!version || typeof version !== 'string') return 'unknown';
+
+  const trimmed = version.trim();
+  if (!trimmed) return 'unknown';
+
+  // Tag Manager IDs or measurement IDs are not software release versions
+  if (/^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+)$/i.test(trimmed)) {
+    return 'unknown';
+  }
+
+  // Check for development indicators (dev, devel, canary, nightly, snapshot, git)
+  if (/-(?:dev|devel|development|canary|nightly|snapshot|git)(?:[.-]|\d|$)/i.test(trimmed)) {
+    return 'development';
+  }
+
+  // Check for prerelease indicators (alpha, beta, rc, preview, pre, next, ea)
+  if (/-(?:alpha|beta|rc|preview|pre|next|ea)(?:[.-]|\d|$)/i.test(trimmed)) {
+    return 'prerelease';
+  }
+
+  // Check for any other hyphen-delimited prerelease tag
+  if (/-\w+/i.test(trimmed)) {
+    return 'prerelease';
+  }
+
+  // Standard semantic version with digits and dots (optional build metadata with '+')
+  if (/^\d+(?:\.\d+)+(?:\+[0-9A-Za-z.-]+)?$/.test(trimmed)) {
+    return 'stable';
+  }
+
+  return 'unknown';
+}
+
+/**
  * Extracts version for a technology rule based on harvested signals
  */
 export function extractVersion(
@@ -106,13 +147,29 @@ export function extractVersion(
 
   // 4. Try extracting from Resource URLs
   if (extractor.fromResource) {
+    // Pass 1: Try primary urlRegex (e.g. prioritized core runtime script)
     for (const url of signals.resources) {
       const match = url.match(extractor.fromResource.urlRegex);
       if (match) {
         const groupIndex = extractor.fromResource.captureGroup || 1;
-        if (match[groupIndex]) {
-          const cleaned = cleanVersion(match[groupIndex]);
+        const captured = match[groupIndex] || match.slice(1).find((g) => Boolean(g));
+        if (captured) {
+          const cleaned = cleanVersion(captured);
           if (cleaned) return cleaned;
+        }
+      }
+    }
+
+    // Pass 2: Try optional fallbackUrlRegex (e.g. subpackage / secondary asset)
+    if (extractor.fromResource.fallbackUrlRegex) {
+      for (const url of signals.resources) {
+        const match = url.match(extractor.fromResource.fallbackUrlRegex);
+        if (match) {
+          const captured = match.slice(1).find((g) => Boolean(g));
+          if (captured) {
+            const cleaned = cleanVersion(captured);
+            if (cleaned) return cleaned;
+          }
         }
       }
     }

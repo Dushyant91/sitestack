@@ -174,7 +174,7 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       const globalOnlySite: HarvestedSignals = {
         url: 'https://example.com',
         globals: {
-          si: () => {},
+          bootstrap: {},
         },
         dom: [],
         meta: [],
@@ -182,13 +182,13 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       };
 
       const result = evaluateSignals(globalOnlySite);
-      const vercel = result.technologies.find((t) => t.id === 'vercel');
+      const bs = result.technologies.find((t) => t.id === 'bootstrap');
 
-      expect(vercel).toBeDefined();
-      expect(vercel?.confidenceTier).toBe('low');
+      expect(bs).toBeDefined();
+      expect(bs?.confidenceTier).toBe('low');
       // Must NOT describe global as a "standalone network asset"
-      expect(vercel?.confidenceReason).toContain('Identified via runtime global (window.si)');
-      expect(vercel?.confidenceReason).not.toContain('standalone network asset');
+      expect(bs?.confidenceReason).toContain('Identified via runtime global (window.bootstrap)');
+      expect(bs?.confidenceReason).not.toContain('standalone network asset');
     });
   });
 
@@ -216,7 +216,7 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       expect(cf?.confidenceReason).toContain('not confirmed Cloudflare hosting or DNS infrastructure');
     });
 
-    it('2.2. Notion.com: window.si alone yields Low tier (45) with explicit telemetry non-hosting disclaimer', () => {
+    it('2.2. Notion.com: window.si alone is calibrated below noise floor (25 < 30) and does not falsely claim Vercel hosting', () => {
       const notionAmbiguousSi: HarvestedSignals = {
         url: 'https://www.notion.com',
         globals: {
@@ -230,11 +230,9 @@ describe('Phase 8.1: Real Website Validation & Detection Engine Audit Suite', ()
       const result = evaluateSignals(notionAmbiguousSi);
       const vercel = result.technologies.find((t) => t.id === 'vercel');
 
-      expect(vercel).toBeDefined();
-      expect(vercel?.confidenceScore).toBe(45);
-      expect(vercel?.confidenceTier).toBe('low');
-      expect(vercel?.confidenceReason).toContain('Identified via runtime global (window.si)');
-      expect(vercel?.confidenceReason).toContain('indicates Vercel Speed Insights / Analytics telemetry, not confirmed Vercel deployment or cloud hosting');
+      // window.si alone is purely client telemetry; it must not trigger Vercel hosting without corroboration
+      expect(vercel).toBeUndefined();
+      expect(result.technologies.length).toBe(0);
     });
 
     it('2.3. Vercel with verified script and telemetry global achieves High confidence', () => {
