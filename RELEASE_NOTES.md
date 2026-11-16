@@ -73,7 +73,7 @@ Comprehensive detection across the modern web stack:
   - Strips session IDs and user identifiers (`session`, `session_id`, `sid`, `user_id`).
   - Strips marketing and ad trackers (`utm_*`, `fbclid`, `gclid`).
   - Strips URL hash fragments (`#...`).
-  - Preserves software version parameter `ver` only when strictly matching `SAFE_VERSION_PATTERN` (`/^[0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?$/`); strips unvalidated, token-like, or session-like values.
+  - Preserves software version parameter `ver` only when strictly matching bounded version grammar (`/^[0-9]+(?:\.[0-9]+)+(?:-(?:dev\.[0-9]+|beta[0-9]+(?:-[0-9]+)?|rc(?:\.[0-9]+|[0-9]+)|alpha[0-9]+(?:-[0-9]+)?))?$/i`); strips unvalidated, token-like, session-like, or adversarial suffix values.
   - Strips query parameter `v` unconditionally because zero supported production rules require it.
   - Preserves strictly validated public measurement tags (`GTM-*`, `G-*`, `UA-*`) required for version extraction.
   - Strips arbitrary user/account IDs in `id` and `tid`.
@@ -120,13 +120,14 @@ Comprehensive detection across the modern web stack:
   - Phase 9.5: Implemented critical evidence URL privacy remediation (`src/shared/url.ts`) across evaluation, history, and exports.
   - Phase 9.6: Hardened query parameter allowlist (`id`/`tid` restricted strictly to public measurement containers `/^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+|UA-[0-9]+-[0-9]+)$/i`), implemented legacy history writeback persistence, verified zero leakage across all 6 evidence classes, and updated all documentation.
   - Phase 9.6.2: Version parameter privacy hardening: implemented `SAFE_VERSION_PATTERN` validation on `ver`, unconditionally stripped unneeded `v` parameter, verified zero leakage across all 8 evidence lifecycle phases, and added regression tests.
+  - Phase 9.6.4: Strict version suffix validation: implemented bounded version grammar strictly accepting numeric releases and well-known prerelease tags with numeric metadata (`dev`, `beta`, `rc`, `alpha`), blocking arbitrary alphabetic or identifier-like suffixes, and verified end-to-end secret eradication across all 8 lifecycle phases.
 
 ---
 
 ## Verification & Build Statistics
 
 - **Total Test Files:** 21 passing
-- **Total Unit & Regression Tests:** 310 passing
+- **Total Unit & Regression Tests:** 312 passing
 - **TypeScript Errors:** 0
 - **Production Build Artifacts:**
   - `dist/service-worker.js`: 26.07 kB (gzip: 8.23 kB)

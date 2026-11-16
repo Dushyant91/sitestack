@@ -98,11 +98,11 @@ To prevent accidental retention or leakage of sensitive data in URLs and diagnos
 - **Hash Fragments Stripped:** All `#...` URL fragments (which may contain client-side routing tokens, authentication tokens, or state payloads) are stripped.
 
 ### Safe Version Parameter Preservation & Measurement Allowlist
-- **Strictly Validated Version Parameter (`ver`):** The query parameter `ver` is preserved **only** when its decoded value strictly matches the standard SemVer / numeric release pattern:
+- **Strictly Validated Version Parameter (`ver`):** The query parameter `ver` is preserved **only** when its decoded value strictly matches the bounded version grammar pattern:
   ```text
-  /^[0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?$/
+  /^[0-9]+(?:\.[0-9]+)+(?:-(?:dev\.[0-9]+|beta[0-9]+(?:-[0-9]+)?|rc(?:\.[0-9]+|[0-9]+)|alpha[0-9]+(?:-[0-9]+)?))?$/i
   ```
-  Valid versions required by production rules (e.g. `wp-emoji-release.min.js?ver=6.4.2`, `woocommerce.min.js?ver=11.4.0-dev.20261116`, `jquery.min.js?ver=3.7.1`) are safely preserved. Any arbitrary, non-version, token-like, or session-like string (e.g. `?ver=user_session_SECRET123`, `?ver=token_ABC123`, `?ver=account_private_identifier`) fails pattern validation and is permanently stripped.
+  Valid numeric release versions and supported prerelease builds with numeric metadata (e.g. `wp-emoji-release.min.js?ver=6.4.2`, `woocommerce.min.js?ver=11.4.0-dev.20261116`, `wp-emoji-release.min.js?ver=7.2-beta5-65440`, `jquery.min.js?ver=3.7.1`) are safely preserved. Any arbitrary, non-version, token-like, session-like, or unapproved suffix strings (e.g. `?ver=user_session_SECRET123`, `?ver=1.2-dev-session123`, `?ver=1.2-beta-user-secret`, `?ver=1.2-rc-tokenABC`) fail bounded grammar validation and are permanently stripped.
 - **Unvalidated `v` Parameter Stripping:** Query parameter `v` is stripped unconditionally. A comprehensive codebase audit confirmed that zero supported production detection rules rely on `v` for version extraction (Bootstrap extracts versions from runtime globals or pathname structures). To eliminate unnecessary data leakage surfaces, `v` is never preserved.
 - **Strictly Bounded Measurement Identifier Allowlist:** The query parameters `id` and `tid` are preserved **only** when their value conforms strictly to public analytics and container formats matching `/^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+|UA-[0-9]+-[0-9]+)$/i` (such as `googletagmanager.com/gtm.js?id=GTM-XXXXXXX` or `google-analytics.com/g/collect?tid=G-XXXXXXXXXX`). Generic or arbitrary user, account, or transaction identifiers (e.g. `?id=user123` or `?tid=txn_999`) fail this pattern match and are automatically stripped as sensitive.
 

@@ -81,9 +81,22 @@ const COMPOUND_SENSITIVE_PATTERN = /(?:^|[_-])(?:auth|token|secret|password|pass
 const PUBLIC_MEASUREMENT_ID_PATTERN = /^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+|UA-[0-9]+-[0-9]+)$/i;
 
 /**
- * Known safe SemVer and release version pattern for software version query parameters (e.g. ver=6.4.2, ver=11.4.0-dev.20261116)
+ * Bounded grammar pattern for safe software version query parameter values
+ * (e.g. ver=6.4.2, ver=11.4.0-dev.20261116, ver=7.2-beta5-65440, ver=6.5-RC1).
+ *
+ * Supported grammar:
+ * 1. Base release: standard numeric sequence ^[0-9]+(?:\.[0-9]+)+
+ * 2. Prerelease suffix (optional): strictly bounded to recognized release tags with numeric metadata:
+ *    - dev: dev\.[0-9]+ (e.g. dev.20261116)
+ *    - beta: beta[0-9]+(?:-[0-9]+)? (e.g. beta5-65440, beta1)
+ *    - rc: rc(?:\.[0-9]+|[0-9]+) (e.g. RC1, rc.1, rc2)
+ *    - alpha: alpha[0-9]+(?:-[0-9]+)? (e.g. alpha1, alpha2-12345)
+ *
+ * Strict constraint: Suffixes are strictly numeric and bounded.
+ * Arbitrary alphabetic strings, tokens, identifiers, or session IDs are rejected.
  */
-export const SAFE_VERSION_PATTERN = /^[0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?$/;
+export const SAFE_VERSION_PATTERN =
+  /^[0-9]+(?:\.[0-9]+)+(?:-(?:dev\.[0-9]+|beta[0-9]+(?:-[0-9]+)?|rc(?:\.[0-9]+|[0-9]+)|alpha[0-9]+(?:-[0-9]+)?))?$/i;
 
 /**
  * Determines whether a query parameter key (and optional value) is sensitive, a tracking identifier,

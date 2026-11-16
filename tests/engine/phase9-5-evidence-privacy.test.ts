@@ -250,6 +250,48 @@ describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification'
 
       expect(sanitizeResourceUrl('not-a-valid-url?v=5.3.0')).toBe('not-a-valid-url');
     });
+
+    it('1.8. Phase 9.6.4: Strict Bounded Version Grammar — preserves exact allowed versions and strips all adversarial suffix vectors', () => {
+      // Preserved vectors (numeric releases, exact prerelease tags with numeric metadata)
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=6.4.2')).toBe(
+        'https://example.com/asset.js?ver=6.4.2'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=11.4.0-dev.20261116')).toBe(
+        'https://example.com/asset.js?ver=11.4.0-dev.20261116'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=7.2-beta5-65440')).toBe(
+        'https://example.com/asset.js?ver=7.2-beta5-65440'
+      );
+      expect(sanitizeResourceUrl('https://example.com/asset.js?ver=6.5-RC1')).toBe(
+        'https://example.com/asset.js?ver=6.5-RC1'
+      );
+
+      // Adversarial stripped vectors (tokens, session IDs, arbitrary text suffixes, fake prerelease suffixes)
+      const adversarialVectors = [
+        'user_session_SECRET123',
+        'token_ABC123',
+        '1.2-session123',
+        '1.2-tokenABC',
+        '1.2-privateidentifier',
+        '1.2-user-secret',
+        '1.2-dev-session123',
+        '1.2-beta-user-secret',
+        '1.2-rc-tokenABC',
+        '1.2-build-privateidentifier',
+        '1.2-dev.SECRET123',
+        '1.2-beta5-privateidentifier',
+        '',
+      ];
+
+      for (const val of adversarialVectors) {
+        // Must be identified as sensitive/unsafe by isSensitiveQueryParam
+        expect(isSensitiveQueryParam('ver', val)).toBe(true);
+        // Must be stripped by sanitizeResourceUrl
+        expect(sanitizeResourceUrl(`https://example.com/asset.js?ver=${val}`)).toBe(
+          'https://example.com/asset.js'
+        );
+      }
+    });
   });
 
   // =========================================================================
@@ -750,6 +792,115 @@ describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification'
       expect(multiCsv).not.toContain('account_private_identifier');
       expect(multiCsv).not.toContain('PAGE_VER_SECRET');
       expect(multiCsv).not.toContain('PAGE_V_SECRET');
+    });
+
+    it('5.3. Phase 9.6.4: End-to-end privacy verification proves adversarial version suffixes cannot enter any of the 8 lifecycle phases', () => {
+      const adversarialTokens = [
+        'session123',
+        'tokenABC',
+        'privateidentifier',
+        'user-secret',
+        'dev-session123',
+        'beta-user-secret',
+        'rc-tokenABC',
+        'build-privateidentifier',
+        'SECRET123',
+        'beta5-privateidentifier',
+      ];
+
+      const dirtyResources = [
+        'https://example.com/asset1.js?ver=1.2-session123',
+        'https://example.com/asset2.js?ver=1.2-tokenABC',
+        'https://example.com/asset3.js?ver=1.2-privateidentifier',
+        'https://example.com/asset4.js?ver=1.2-user-secret',
+        'https://example.com/asset5.js?ver=1.2-dev-session123',
+        'https://example.com/asset6.js?ver=1.2-beta-user-secret',
+        'https://example.com/asset7.js?ver=1.2-rc-tokenABC',
+        'https://example.com/asset8.js?ver=1.2-build-privateidentifier',
+        'https://example.com/asset9.js?ver=1.2-dev.SECRET123',
+        'https://example.com/asset10.js?ver=1.2-beta5-privateidentifier',
+        // Legitimate version resources that must be preserved
+        'https://example.com/wp-includes/js/wp-emoji-release.min.js?ver=7.2-beta5-65440',
+        'https://example.com/wp-content/plugins/woocommerce/assets/js/frontend/woocommerce.min.js?ver=11.4.0-dev.20261116',
+        'https://example.com/react.js?ver=6.4.2',
+        'https://example.com/bootstrap.min.js?ver=6.5-RC1',
+      ];
+
+      // 1. Sanitized resource URLs
+      for (const resUrl of dirtyResources) {
+        const cleaned = sanitizeResourceUrl(resUrl);
+        for (const tok of adversarialTokens) {
+          expect(cleaned).not.toContain(tok);
+        }
+      }
+
+      const signals: HarvestedSignals = {
+        url: 'https://example.com/page?ver=1.2-dev-session123',
+        meta: [],
+        dom: [{ selector: '[data-reactroot]' }],
+        resources: dirtyResources,
+        globals: {
+          React: { version: '18.3.1' },
+          wp: {},
+          woocommerce_params: {},
+          bootstrap: {},
+        },
+      };
+
+      // 2. Evaluation / In-memory ScanResult
+      const scanResult = evaluateSignals(signals);
+
+      // Verify evidence.source and evidence.matchedValue across all technologies
+      for (const t of scanResult.technologies) {
+        for (const e of t.evidence) {
+          for (const tok of adversarialTokens) {
+            // 2. evidence.source
+            expect(e.source).not.toContain(tok);
+            // 3. evidence.matchedValue
+            if (e.matchedValue) {
+              expect(e.matchedValue).not.toContain(tok);
+            }
+          }
+        }
+      }
+
+      // 4. In-memory ScanResult stringified
+      const resultStr = JSON.stringify(scanResult);
+      for (const tok of adversarialTokens) {
+        expect(resultStr).not.toContain(tok);
+      }
+
+      // 5. Chrome local storage (sanitizeScanResult)
+      const stored = sanitizeScanResult(scanResult);
+      const storedStr = JSON.stringify(stored);
+      for (const tok of adversarialTokens) {
+        expect(storedStr).not.toContain(tok);
+      }
+
+      // 6. Single-scan JSON export
+      const jsonExport = formatExportJson(scanResult);
+      const jsonStr = JSON.stringify(jsonExport);
+      for (const tok of adversarialTokens) {
+        expect(jsonStr).not.toContain(tok);
+      }
+
+      // 7. Single-scan CSV export
+      const csvExport = formatExportCsv(scanResult);
+      for (const tok of adversarialTokens) {
+        expect(csvExport).not.toContain(tok);
+      }
+
+      // 8. Multi-scan CSV export
+      const multiCsv = formatMultiScanExportCsv([scanResult]);
+      for (const tok of adversarialTokens) {
+        expect(multiCsv).not.toContain(tok);
+      }
+
+      // Confirm preserved versions survived into evidence and exports
+      expect(resultStr).toContain('ver=7.2-beta5-65440');
+      expect(resultStr).toContain('ver=11.4.0-dev.20261116');
+      expect(resultStr).toContain('ver=6.4.2');
+      expect(resultStr).toContain('ver=6.5-RC1');
     });
   });
 });
