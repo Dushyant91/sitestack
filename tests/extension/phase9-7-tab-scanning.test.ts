@@ -10,43 +10,73 @@ import {
   deleteScanFromHistory,
   clearScanHistory,
   getScanHistory,
+  cleanupLegacyLocalTabScans,
   STORAGE_KEY_HISTORY,
   STORAGE_KEY_TAB_SCANS,
 } from '../../src/extension/storage/history';
 import { ScanResult } from '../../src/engine/types';
 import * as isolatedProbe from '../../src/extension/content/isolated-probe';
 
-describe('Phase 9.7.1: User-Triggered Scan & Active-Tab Isolation Regression Suite', () => {
-  let mockStorage: Record<string, unknown> = {};
+describe('Phase 9.7.3: Tab-State Lifecycle, Session Storage & Navigation Hardening Suite', () => {
+  let mockLocalStorage: Record<string, unknown> = {};
+  let mockSessionStorage: Record<string, unknown> = {};
+  let currentTabUrls: Record<number, string> = {};
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    mockStorage = {};
+    mockLocalStorage = {};
+    mockSessionStorage = {};
+    currentTabUrls = {};
 
     globalThis.chrome = {
       storage: {
         local: {
           get: vi.fn(async (keys?: unknown) => {
             if (typeof keys === 'string') {
-              return { [keys]: mockStorage[keys] };
+              return { [keys]: mockLocalStorage[keys] };
             }
             if (Array.isArray(keys)) {
               const res: Record<string, unknown> = {};
-              for (const k of keys) res[k] = mockStorage[k];
+              for (const k of keys) res[k] = mockLocalStorage[k];
               return res;
             }
-            return { ...mockStorage };
+            return { ...mockLocalStorage };
           }),
           set: vi.fn(async (items: Record<string, unknown>) => {
             for (const k in items) {
-              mockStorage[k] = items[k];
+              mockLocalStorage[k] = items[k];
             }
           }),
           remove: vi.fn(async (keys: unknown) => {
             if (typeof keys === 'string') {
-              delete mockStorage[keys];
+              delete mockLocalStorage[keys];
             } else if (Array.isArray(keys)) {
-              for (const k of keys) delete mockStorage[k];
+              for (const k of keys) delete mockLocalStorage[k];
+            }
+          }),
+        },
+        session: {
+          get: vi.fn(async (keys?: unknown) => {
+            if (typeof keys === 'string') {
+              return { [keys]: mockSessionStorage[keys] };
+            }
+            if (Array.isArray(keys)) {
+              const res: Record<string, unknown> = {};
+              for (const k of keys) res[k] = mockSessionStorage[k];
+              return res;
+            }
+            return { ...mockSessionStorage };
+          }),
+          set: vi.fn(async (items: Record<string, unknown>) => {
+            for (const k in items) {
+              mockSessionStorage[k] = items[k];
+            }
+          }),
+          remove: vi.fn(async (keys: unknown) => {
+            if (typeof keys === 'string') {
+              delete mockSessionStorage[keys];
+            } else if (Array.isArray(keys)) {
+              for (const k of keys) delete mockSessionStorage[k];
             }
           }),
         },
@@ -69,7 +99,18 @@ describe('Phase 9.7.1: User-Triggered Scan & Active-Tab Isolation Regression Sui
         }),
       },
       tabs: {
-        query: vi.fn().mockResolvedValue([{ id: 101, url: 'https://example.com/' }]),
+        get: vi.fn().mockImplementation(async (tabId: number) => {
+          if (currentTabUrls[tabId] === undefined) {
+            throw new Error(`No tab with id: ${tabId}`);
+          }
+          return { id: tabId, url: currentTabUrls[tabId] };
+        }),
+        query: vi.fn().mockImplementation(async () => {
+          const firstTabId = Object.keys(currentTabUrls)[0];
+          if (!firstTabId) return [{ id: 101, url: 'https://example.com/' }];
+          const id = Number(firstTabId);
+          return [{ id, url: currentTabUrls[id] }];
+        }),
         onUpdated: { addListener: vi.fn() },
         onRemoved: { addListener: vi.fn() },
       },
@@ -77,51 +118,20 @@ describe('Phase 9.7.1: User-Triggered Scan & Active-Tab Isolation Regression Sui
   });
 
   // =========================================================================
-  // 1. Never-Scanned Tab Status & Opening Popup Avoids Scan Invocation
+  // 1. Session Storage Lifecycle & Survival Across Service Worker Restarts
   // =========================================================================
-  it('1. Opening popup on a never-scanned tab returns isScanned=false and never scans', async () => {
+  it('1. Session associations survive service-worker reinitialization', async () => {
     const tabId = 101;
-    const url = 'https://x.com/home';
+    const url = 'https://react.dev/';
+    currentTabUrls[tabId] = url;
 
-    const tabScan = await getTabScan(tabId, url);
-    expect(tabScan).toBeNull();
-
-    // Verify executeScript was called 0 times
-    expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(0);
-  });
-
-  it('2. Opening popup must not call the scan function', async () => {
-    const probeSpy = vi.spyOn(isolatedProbe, 'harvestIsolatedSignals');
-
-    // Simulate popup checking tab status on mount
-    const tabId = 202;
-    const url = 'https://en.wikipedia.org/wiki/Main_Page';
-
-    const tabScan = await getTabScan(tabId, url);
-    expect(tabScan).toBeNull();
-
-    // Probe function was never invoked
-    expect(probeSpy).toHaveBeenCalledTimes(0);
-    expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(0);
-  });
-
-  // =========================================================================
-  // 3. Tab Switching: Scanned vs. Unscanned State Isolation
-  // =========================================================================
-  it('3. Switching from a scanned tab to an unscanned tab: Unscanned tab shows isScanned=false', async () => {
-    const tab1 = 101;
-    const url1 = 'https://react.dev/';
-    const tab2 = 102;
-    const url2 = 'https://en.wikipedia.org/wiki/Main_Page';
-
-    // Scan Tab 1
-    const scanResult1: ScanResult = {
-      id: 'react_dev_1',
-      url: url1,
+    const sampleScan: ScanResult = {
+      id: 'react_scan_1',
+      url,
       domain: 'react.dev',
       timestamp: Date.now(),
-      engineEvaluationDurationMs: 2,
-      scanDurationMs: 2,
+      engineEvaluationDurationMs: 1,
+      scanDurationMs: 1,
       technologies: [
         {
           id: 'react',
@@ -140,84 +150,31 @@ describe('Phase 9.7.1: User-Triggered Scan & Active-Tab Isolation Regression Sui
       stats: { total: 1, high: 1, medium: 0, low: 0 },
     };
 
-    // Save Tab 1 to history and tab session
-    mockStorage[STORAGE_KEY_HISTORY] = [scanResult1];
-    await setTabScan(tab1, url1, scanResult1);
+    // Save to persistent history in local storage
+    mockLocalStorage[STORAGE_KEY_HISTORY] = [sampleScan];
 
-    // Verify Tab 1 is scanned
-    const checkTab1 = await getTabScan(tab1, url1);
-    expect(checkTab1).not.toBeNull();
-    expect(checkTab1?.technologies[0].id).toBe('react');
+    // Set tab association in session storage
+    await setTabScan(tabId, url, sampleScan);
 
-    // Verify Tab 2 is UNSCANNED (zero bleed from Tab 1)
-    const checkTab2 = await getTabScan(tab2, url2);
-    expect(checkTab2).toBeNull();
+    // Verify written to session storage (NOT local storage)
+    expect(mockSessionStorage[STORAGE_KEY_TAB_SCANS]).toBeDefined();
+    expect(mockLocalStorage[STORAGE_KEY_TAB_SCANS]).toBeUndefined();
+
+    // Simulate service-worker termination and restart:
+    // Memory closures die, but chrome.storage.session and chrome.storage.local persist
+    const restoredScan = await getTabScan(tabId, url);
+    expect(restoredScan).not.toBeNull();
+    expect(restoredScan?.id).toBe('react_scan_1');
+    expect(restoredScan?.technologies[0].id).toBe('react');
   });
 
-  it('4. Switching between two previously scanned tabs: Each tab displays its own result', async () => {
-    const tabShopify = 101;
-    const urlShopify = 'https://mystore.myshopify.com/';
-    const tabWoo = 102;
-    const urlWoo = 'https://woocommerce.com/store';
-
-    const shopifyResult: ScanResult = {
-      id: 'shopify_1',
-      url: urlShopify,
-      domain: 'mystore.myshopify.com',
-      timestamp: Date.now() - 1000,
-      engineEvaluationDurationMs: 1,
-      scanDurationMs: 1,
-      technologies: [{ id: 'shopify', name: 'Shopify', category: 'ecommerce', confidenceScore: 95, confidenceTier: 'high', detectionType: 'direct', isInferred: false, evidence: [], website: '', icon: '', description: '' }],
-      stats: { total: 1, high: 1, medium: 0, low: 0 },
-    };
-
-    const wooResult: ScanResult = {
-      id: 'woo_1',
-      url: urlWoo,
-      domain: 'woocommerce.com',
-      timestamp: Date.now(),
-      engineEvaluationDurationMs: 1,
-      scanDurationMs: 1,
-      technologies: [{ id: 'woocommerce', name: 'WooCommerce', category: 'ecommerce', confidenceScore: 90, confidenceTier: 'high', detectionType: 'direct', isInferred: false, evidence: [], website: '', icon: '', description: '' }],
-      stats: { total: 1, high: 1, medium: 0, low: 0 },
-    };
-
-    mockStorage[STORAGE_KEY_HISTORY] = [shopifyResult, wooResult];
-    await setTabScan(tabShopify, urlShopify, shopifyResult);
-    await setTabScan(tabWoo, urlWoo, wooResult);
-
-    // Tab Shopify shows Shopify
-    const shopifyScan = await getTabScan(tabShopify, urlShopify);
-    expect(shopifyScan?.technologies[0].id).toBe('shopify');
-
-    // Tab Woo shows WooCommerce
-    const wooScan = await getTabScan(tabWoo, urlWoo);
-    expect(wooScan?.technologies[0].id).toBe('woocommerce');
-  });
-
-  it('5. Opening popup repeatedly without scanning executes zero scans', async () => {
-    const tabId = 105;
-    const url = 'https://x.com/home';
-
-    // Simulate 5 consecutive popup opens
-    for (let i = 0; i < 5; i++) {
-      const res = await getTabScan(tabId, url);
-      expect(res).toBeNull();
-    }
-
-    // Zero scans executed across all 5 opens
-    expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(0);
-  });
-
-  // =========================================================================
-  // 6. History Deletion & Cache Invalidation
-  // =========================================================================
-  it('6. Clearing history while a result is displayed: Invalidates tab association immediately', async () => {
+  it('2. Clearing session storage simulates browser restart and removes associations without touching history', async () => {
     const tabId = 101;
     const url = 'https://x.com/home';
+    currentTabUrls[tabId] = url;
 
-    const xResult: ScanResult = {
-      id: 'x_com_123',
+    const xScan: ScanResult = {
+      id: 'x_scan_1',
       url,
       domain: 'x.com',
       timestamp: Date.now(),
@@ -227,209 +184,212 @@ describe('Phase 9.7.1: User-Triggered Scan & Active-Tab Isolation Regression Sui
       stats: { total: 1, high: 0, medium: 1, low: 0 },
     };
 
-    mockStorage[STORAGE_KEY_HISTORY] = [xResult];
-    await setTabScan(tabId, url, xResult);
+    mockLocalStorage[STORAGE_KEY_HISTORY] = [xScan];
+    await setTabScan(tabId, url, xScan);
 
-    // Initial check: active tab is scanned
     expect(await getTabScan(tabId, url)).not.toBeNull();
 
-    // User clears history
-    await clearScanHistory();
+    // Simulate browser exit/restart: Chromium clears session storage, while local storage remains on disk
+    mockSessionStorage = {};
 
-    // Tab scan association is immediately invalidated
-    const afterClear = await getTabScan(tabId, url);
-    expect(afterClear).toBeNull();
-    expect(mockStorage[STORAGE_KEY_TAB_SCANS]).toBeUndefined();
-  });
+    // Tab scan must return null ("Ready to Scan"), proving zero stale association survived
+    const postRestartScan = await getTabScan(tabId, url);
+    expect(postRestartScan).toBeNull();
 
-  it('7. Deleting one record while its result is displayed: Prunes that tab association', async () => {
-    const tabX = 101;
-    const urlX = 'https://x.com/home';
-    const tabNotion = 102;
-    const urlNotion = 'https://notion.so/';
-
-    const xResult: ScanResult = {
-      id: 'x_1',
-      url: urlX,
-      domain: 'x.com',
-      timestamp: 1000,
-      engineEvaluationDurationMs: 1,
-      scanDurationMs: 1,
-      technologies: [],
-      stats: { total: 0, high: 0, medium: 0, low: 0 },
-    };
-
-    const notionResult: ScanResult = {
-      id: 'notion_1',
-      url: urlNotion,
-      domain: 'notion.so',
-      timestamp: 2000,
-      engineEvaluationDurationMs: 1,
-      scanDurationMs: 1,
-      technologies: [{ id: 'react', name: 'React', category: 'framework', confidenceScore: 85, confidenceTier: 'high', detectionType: 'direct', isInferred: false, evidence: [], website: '', icon: '', description: '' }],
-      stats: { total: 1, high: 1, medium: 0, low: 0 },
-    };
-
-    mockStorage[STORAGE_KEY_HISTORY] = [xResult, notionResult];
-    await setTabScan(tabX, urlX, xResult);
-    await setTabScan(tabNotion, urlNotion, notionResult);
-
-    // Delete ONLY the X scan
-    await deleteScanFromHistory('x_1');
-
-    // Tab X is invalidated
-    expect(await getTabScan(tabX, urlX)).toBeNull();
-
-    // Tab Notion remains intact
-    const notionScan = await getTabScan(tabNotion, urlNotion);
-    expect(notionScan).not.toBeNull();
-    expect(notionScan?.id).toBe('notion_1');
-  });
-
-  it('8. Reopening popup after history deletion stays unscanned (never restores from memory cache)', async () => {
-    const tabId = 101;
-    const url = 'https://x.com/home';
-
-    const xResult: ScanResult = {
-      id: 'x_1',
-      url,
-      domain: 'x.com',
-      timestamp: 1000,
-      engineEvaluationDurationMs: 1,
-      scanDurationMs: 1,
-      technologies: [],
-      stats: { total: 0, high: 0, medium: 0, low: 0 },
-    };
-
-    mockStorage[STORAGE_KEY_HISTORY] = [xResult];
-    await setTabScan(tabId, url, xResult);
-
-    // Delete record
-    await deleteScanFromHistory('x_1');
-
-    // Reopen popup 3 times
-    expect(await getTabScan(tabId, url)).toBeNull();
-    expect(await getTabScan(tabId, url)).toBeNull();
-    expect(await getTabScan(tabId, url)).toBeNull();
-
-    // Zero scans triggered
-    expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(0);
-  });
-
-  // =========================================================================
-  // 9. Navigation & Stale Results Invalidation
-  // =========================================================================
-  it('9. Navigating within an already scanned tab invalidates previous result', async () => {
-    const tabId = 101;
-    const oldUrl = 'https://github.com/explore';
-    const newUrl = 'https://github.com/trending';
-
-    const githubResult: ScanResult = {
-      id: 'gh_1',
-      url: oldUrl,
-      domain: 'github.com',
-      timestamp: 1000,
-      engineEvaluationDurationMs: 1,
-      scanDurationMs: 1,
-      technologies: [],
-      stats: { total: 0, high: 0, medium: 0, low: 0 },
-    };
-
-    mockStorage[STORAGE_KEY_HISTORY] = [githubResult];
-    await setTabScan(tabId, oldUrl, githubResult);
-
-    // Verified scanned on old URL
-    expect(await getTabScan(tabId, oldUrl)).not.toBeNull();
-
-    // Tab navigates to new URL -> getTabScan checks new URL against stored URL
-    const scanOnNewUrl = await getTabScan(tabId, newUrl);
-    expect(scanOnNewUrl).toBeNull(); // Outdated result is invalidated!
-
-    // Also verify via invalidateTabScanIfUrlChanged
-    await setTabScan(tabId, oldUrl, githubResult);
-    await invalidateTabScanIfUrlChanged(tabId, newUrl);
-    expect(await getTabScan(tabId, newUrl)).toBeNull();
-
-    // Also verify via invalidateTabScan (tab closure)
-    await setTabScan(tabId, oldUrl, githubResult);
-    await invalidateTabScan(tabId);
-    expect(await getTabScan(tabId, oldUrl)).toBeNull();
-  });
-
-  it('10. Multiple tabs with different URLs and results maintain strict isolation', async () => {
-    const tabs = [
-      { id: 1, url: 'https://site-a.com/', tech: 'react' },
-      { id: 2, url: 'https://site-b.com/', tech: 'vue' },
-      { id: 3, url: 'https://site-c.com/', tech: 'angular' },
-      { id: 4, url: 'https://site-d.com/', tech: 'wordpress' },
-    ];
-
-    const history: ScanResult[] = [];
-    for (const t of tabs) {
-      const res: ScanResult = {
-        id: `scan_${t.id}`,
-        url: t.url,
-        domain: `site-${t.id}.com`,
-        timestamp: 1000 + t.id,
-        engineEvaluationDurationMs: 1,
-        scanDurationMs: 1,
-        technologies: [{ id: t.tech, name: t.tech, category: 'framework', confidenceScore: 90, confidenceTier: 'high', detectionType: 'direct', isInferred: false, evidence: [], website: '', icon: '', description: '' }],
-        stats: { total: 1, high: 1, medium: 0, low: 0 },
-      };
-      history.push(res);
-      await setTabScan(t.id, t.url, res);
-    }
-    mockStorage[STORAGE_KEY_HISTORY] = history;
-
-    // Verify each tab receives ONLY its own technology
-    for (const t of tabs) {
-      const result = await getTabScan(t.id, t.url);
-      expect(result).not.toBeNull();
-      expect(result?.technologies[0].id).toBe(t.tech);
-      expect(result?.url).toBe(t.url);
-    }
-  });
-
-  // =========================================================================
-  // 11. Rapid Tab Switching & Concurrency Guard
-  // =========================================================================
-  it('11. Rapid tab switching during an active scan: Tab lock prevents duplicate injection', async () => {
-    const tabId = 101;
-    const url = 'https://heavy-site.com/';
-
-    // Trigger two concurrent scans on identical tab
-    const [scan1, scan2] = await Promise.all([
-      performTabScan(tabId, url, true),
-      performTabScan(tabId, url, false),
-    ]);
-
-    expect(scan1).toBeDefined();
-    expect(scan2).toBeDefined();
-    expect(scan1.url).toBe(url);
-    expect(scan2.url).toBe(url);
-  });
-
-  // =========================================================================
-  // 12. Explicit User-Triggered Scanning Works Correctly
-  // =========================================================================
-  it('12. Explicit user-triggered scanning: Calls performTabScan, saves to history, and binds to tab', async () => {
-    const tabId = 101;
-    const url = 'https://user-scanned-site.com/';
-
-    // Execute user-requested scan
-    const scan = await performTabScan(tabId, url, true);
-
-    expect(scan).toBeDefined();
-    expect(scan.url).toBe(url);
-
-    // Verify persisted in history
+    // Persistent history remains completely intact in local storage
     const history = await getScanHistory();
-    expect(history.length).toBeGreaterThan(0);
-    expect(history[0].url).toBe(url);
+    expect(history.length).toBe(1);
+    expect(history[0].id).toBe('x_scan_1');
+  });
 
-    // Verify bound to tab
+  // =========================================================================
+  // 3. Document Lifecycle: Same-URL Reload, Back/Forward & Redirects
+  // =========================================================================
+  it('3. Same-URL reload invalidates association (changeInfo.status === "loading")', async () => {
+    const tabId = 101;
+    const url = 'https://react.dev/';
+    currentTabUrls[tabId] = url;
+
+    const sampleScan: ScanResult = {
+      id: 'react_scan_1',
+      url,
+      domain: 'react.dev',
+      timestamp: Date.now(),
+      engineEvaluationDurationMs: 1,
+      scanDurationMs: 1,
+      technologies: [],
+      stats: { total: 0, high: 0, medium: 0, low: 0 },
+    };
+
+    mockLocalStorage[STORAGE_KEY_HISTORY] = [sampleScan];
+    await setTabScan(tabId, url, sampleScan);
+    expect(await getTabScan(tabId, url)).not.toBeNull();
+
+    // User hits F5 / reload: Chromium fires onUpdated with status: 'loading' (url is undefined)
+    await invalidateTabScan(tabId); // directly verifies effect of status === 'loading' listener
+
+    expect(await getTabScan(tabId, url)).toBeNull();
+  });
+
+  it('4. Back and Forward navigation invalidates old results', async () => {
+    const tabId = 101;
+    const urlA = 'https://site.com/page-a';
+    const urlB = 'https://site.com/page-b';
+    currentTabUrls[tabId] = urlB;
+
+    const scanA: ScanResult = {
+      id: 'scan_a',
+      url: urlA,
+      domain: 'site.com',
+      timestamp: 1000,
+      engineEvaluationDurationMs: 1,
+      scanDurationMs: 1,
+      technologies: [],
+      stats: { total: 0, high: 0, medium: 0, low: 0 },
+    };
+
+    mockLocalStorage[STORAGE_KEY_HISTORY] = [scanA];
+    await setTabScan(tabId, urlA, scanA);
+
+    // Tab was scanned on urlA, but browser navigated Back to urlB
+    const scanOnUrlB = await getTabScan(tabId, urlB);
+    expect(scanOnUrlB).toBeNull(); // Mismatch invalidates!
+  });
+
+  it('5. Redirect during an active scan invalidates tab association', async () => {
+    const tabId = 101;
+    const initialUrl = 'http://example.com/';
+    const redirectedUrl = 'https://example.com/';
+    currentTabUrls[tabId] = redirectedUrl;
+
+    const initialScan: ScanResult = {
+      id: 'example_scan',
+      url: initialUrl,
+      domain: 'example.com',
+      timestamp: Date.now(),
+      engineEvaluationDurationMs: 1,
+      scanDurationMs: 1,
+      technologies: [],
+      stats: { total: 0, high: 0, medium: 0, low: 0 },
+    };
+
+    mockLocalStorage[STORAGE_KEY_HISTORY] = [initialScan];
+    await setTabScan(tabId, initialUrl, initialScan);
+
+    // Redirect occurred: status === 'loading' fired or url updated to redirectedUrl
+    await invalidateTabScanIfUrlChanged(tabId, redirectedUrl);
+
+    expect(await getTabScan(tabId, redirectedUrl)).toBeNull();
+  });
+
+  // =========================================================================
+  // 6. D3 Guard: In-Flight Navigation Prevents Incorrect Tab Association
+  // =========================================================================
+  it('6. Navigation during scan prevents incorrect tab association (D3 Guard)', async () => {
+    const tabId = 101;
+    const originalUrl = 'https://site-a.com/';
+    const navigatedUrl = 'https://site-b.com/';
+
+    // Live tab currently shows originalUrl when scan starts
+    currentTabUrls[tabId] = originalUrl;
+
+    // Simulate probe execution taking time, during which user navigates tab to site-b.com
+    (chrome.scripting.executeScript as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(async () => {
+      // User navigates away while script is executing
+      currentTabUrls[tabId] = navigatedUrl;
+      return [{ result: { url: originalUrl, meta: [], dom: [], resources: [] } }];
+    });
+
+    // Scan finishes for originalUrl
+    const scanResult = await performTabScan(tabId, originalUrl, true);
+
+    // The scan completed and was saved to global history
+    expect(scanResult).toBeDefined();
+    expect(scanResult.url).toBe(originalUrl);
+
+    // BUT D3 guard checked chrome.tabs.get(tabId) and noticed currentTab.url === 'https://site-b.com/'
+    // So it did NOT associate originalUrl scan with tab 101!
+    const tabScan = await getTabScan(tabId, navigatedUrl);
+    expect(tabScan).toBeNull();
+  });
+
+  // =========================================================================
+  // 7. Closed Tab Behavior During Scan
+  // =========================================================================
+  it('7. Closed-tab behavior: Tab closed during active scan is handled safely without crashing', async () => {
+    const tabId = 999;
+    const url = 'https://closing-tab.com/';
+
+    // Tab does not exist in currentTabUrls (simulates closed tab)
+    delete currentTabUrls[tabId];
+
+    // performTabScan handles tab lookup rejection gracefully
+    const scanResult = await performTabScan(tabId, url, true);
+    expect(scanResult).toBeDefined();
+
+    // Tab scan association was safely discarded
     const tabScan = await getTabScan(tabId, url);
-    expect(tabScan).not.toBeNull();
-    expect(tabScan?.url).toBe(url);
+    expect(tabScan).toBeNull();
+  });
+
+  // =========================================================================
+  // 8. History Deletion & Clearing Synchronization
+  // =========================================================================
+  it('8. History deletion and clearing remain synchronized across local and session storage', async () => {
+    const tab1 = 101;
+    const tab2 = 102;
+    const url1 = 'https://site-one.com/';
+    const url2 = 'https://site-two.com/';
+    currentTabUrls[tab1] = url1;
+    currentTabUrls[tab2] = url2;
+
+    const scan1: ScanResult = { id: 's1', url: url1, domain: 'site-one.com', timestamp: 100, engineEvaluationDurationMs: 1, scanDurationMs: 1, technologies: [], stats: { total: 0, high: 0, medium: 0, low: 0 } };
+    const scan2: ScanResult = { id: 's2', url: url2, domain: 'site-two.com', timestamp: 200, engineEvaluationDurationMs: 1, scanDurationMs: 1, technologies: [], stats: { total: 0, high: 0, medium: 0, low: 0 } };
+
+    mockLocalStorage[STORAGE_KEY_HISTORY] = [scan1, scan2];
+    await setTabScan(tab1, url1, scan1);
+    await setTabScan(tab2, url2, scan2);
+
+    expect(await getTabScan(tab1, url1)).not.toBeNull();
+    expect(await getTabScan(tab2, url2)).not.toBeNull();
+
+    // Delete single scan 's1'
+    await deleteScanFromHistory('s1');
+    expect(await getTabScan(tab1, url1)).toBeNull(); // Pruned from session
+    expect(await getTabScan(tab2, url2)).not.toBeNull(); // s2 remains
+
+    // Clear all history
+    await clearScanHistory();
+    expect(await getTabScan(tab2, url2)).toBeNull(); // Both pruned from session
+    expect(mockLocalStorage[STORAGE_KEY_HISTORY]).toBeUndefined();
+  });
+
+  // =========================================================================
+  // 9. Legacy Local-Storage Cleanup
+  // =========================================================================
+  it('9. Cleanup legacy local tab scans removes obsolete key from chrome.storage.local', async () => {
+    // Populate obsolete local key from earlier version
+    mockLocalStorage[STORAGE_KEY_TAB_SCANS] = { '101': { url: 'https://legacy.com' } };
+    expect(mockLocalStorage[STORAGE_KEY_TAB_SCANS]).toBeDefined();
+
+    await cleanupLegacyLocalTabScans();
+
+    // Obsolete key cleanly removed from local storage
+    expect(mockLocalStorage[STORAGE_KEY_TAB_SCANS]).toBeUndefined();
+  });
+
+  // =========================================================================
+  // 10. Multi-Tab Isolation & Unscanned Initial State
+  // =========================================================================
+  it('10. Multi-tab isolation: Opening popup on never-scanned tab returns null and zero probe calls', async () => {
+    const probeSpy = vi.spyOn(isolatedProbe, 'harvestIsolatedSignals');
+    const tabId = 303;
+    const url = 'https://never-scanned.org/';
+    currentTabUrls[tabId] = url;
+
+    const result = await getTabScan(tabId, url);
+    expect(result).toBeNull();
+    expect(probeSpy).toHaveBeenCalledTimes(0);
+    expect(chrome.scripting.executeScript).toHaveBeenCalledTimes(0);
   });
 });

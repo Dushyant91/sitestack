@@ -15,6 +15,8 @@ import {
   setTabScan,
   invalidateTabScan,
   invalidateTabScanIfUrlChanged,
+  cleanupLegacyLocalTabScans,
+  normalizeScanUrl,
 } from '../storage/history';
 
 /**
@@ -140,9 +142,29 @@ export async function performTabScan(
     // 4. Run Pure Detection Engine
     const scanResult = evaluateSignals(combinedSignals);
 
-    // 5. Persist to Local History Storage & Tab Session Association
+    // 5. Persist to Local History Storage
     await saveScanToStorage(scanResult);
-    await setTabScan(tabId, tabUrl, scanResult);
+
+    // 6. Verify tab is still on the scanned URL before saving tab association (D3 Guard)
+    try {
+      if (typeof chrome !== 'undefined' && chrome.tabs?.get) {
+        const liveTab = await chrome.tabs.get(tabId);
+        if (
+          liveTab?.url &&
+          normalizeScanUrl(liveTab.url) === normalizeScanUrl(tabUrl)
+        ) {
+          await setTabScan(tabId, tabUrl, scanResult);
+        } else {
+          // Tab navigated away during active probe -> do NOT associate with tab!
+          await invalidateTabScan(tabId);
+        }
+      } else {
+        await setTabScan(tabId, tabUrl, scanResult);
+      }
+    } catch {
+      // Tab was closed or lookup failed -> safely invalidate
+      await invalidateTabScan(tabId);
+    }
 
     return scanResult;
   } finally {
@@ -271,10 +293,13 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
   });
 }
 
-// Invalidate tab scan when navigation occurs in a tab
+// Invalidate tab scan when navigation or same-URL reload occurs in a tab (D2 Guard)
 if (typeof chrome !== 'undefined' && chrome.tabs?.onUpdated) {
   chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-    if (changeInfo.url) {
+    if (changeInfo.status === 'loading') {
+      // Same-URL reload, Back/Forward, or new navigation start: invalidate immediately
+      invalidateTabScan(tabId).catch(() => {});
+    } else if (changeInfo.url) {
       invalidateTabScanIfUrlChanged(tabId, changeInfo.url).catch(() => {});
     }
   });
@@ -286,3 +311,6 @@ if (typeof chrome !== 'undefined' && chrome.tabs?.onRemoved) {
     invalidateTabScan(tabId).catch(() => {});
   });
 }
+
+// Clean up any legacy local-storage tab associations
+cleanupLegacyLocalTabScans().catch(() => {});

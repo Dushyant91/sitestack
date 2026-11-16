@@ -278,8 +278,9 @@ export async function deleteScanFromHistory(idOrTimestamp: string | number): Pro
     if (filtered.length !== initialLen) {
       await chrome.storage.local.set({ [STORAGE_KEY_HISTORY]: filtered });
 
-      // Invalidate any active tab scan referencing this deleted item
+      // Invalidate any active session tab scan referencing this deleted item
       try {
+        const sessionStore = getSessionStorageArea();
         const tabScans = await getTabScansMap();
         let modified = false;
         for (const tabKey in tabScans) {
@@ -295,7 +296,7 @@ export async function deleteScanFromHistory(idOrTimestamp: string | number): Pro
           }
         }
         if (modified) {
-          await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+          await sessionStore.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
         }
       } catch (tabErr) {
         console.warn('[SiteStack Storage] Failed to prune tab scans on delete:', tabErr);
@@ -311,17 +312,32 @@ export async function deleteScanFromHistory(idOrTimestamp: string | number): Pro
 }
 
 /**
- * Clears all scan history and active tab scan associations
+ * Removes obsolete local-storage tab association keys from earlier versions.
+ */
+export async function cleanupLegacyLocalTabScans(): Promise<void> {
+  if (typeof chrome !== 'undefined' && typeof chrome.storage?.local?.remove === 'function') {
+    try {
+      await chrome.storage.local.remove(STORAGE_KEY_TAB_SCANS);
+    } catch {
+      // Ignore cleanup error
+    }
+  }
+}
+
+/**
+ * Clears all scan history and active session tab scan associations
  */
 export async function clearScanHistory(): Promise<void> {
   if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
   try {
     await chrome.storage.local.remove(STORAGE_KEY_HISTORY);
     try {
-      await chrome.storage.local.remove(STORAGE_KEY_TAB_SCANS);
+      const sessionStore = getSessionStorageArea();
+      await sessionStore.remove(STORAGE_KEY_TAB_SCANS);
     } catch {
       // Ignore if tab scans key doesn't exist
     }
+    await cleanupLegacyLocalTabScans();
   } catch (err) {
     console.warn('[SiteStack Storage] Failed to clear history:', err);
   }
@@ -335,12 +351,64 @@ export interface TabScanEntry {
 }
 
 /**
- * Retrieves the raw map of active tab scans
+ * In-memory fallback map if chrome.storage.session is not available in mock/test runtimes.
+ * Never persists to disk, ensuring browser restart isolation is strictly preserved.
+ */
+const inMemorySessionFallback: Record<string, unknown> = {};
+
+/**
+ * Helper to access chrome.storage.session or an in-memory session fallback.
+ * Strictly prevents writing temporary tab associations to persistent local disk storage.
+ */
+export function getSessionStorageArea(): {
+  get: (keys?: string | string[]) => Promise<Record<string, unknown>>;
+  set: (items: Record<string, unknown>) => Promise<void>;
+  remove: (keys: string | string[]) => Promise<void>;
+} {
+  if (
+    typeof chrome !== 'undefined' &&
+    chrome.storage?.session &&
+    typeof chrome.storage.session.get === 'function' &&
+    typeof chrome.storage.session.set === 'function' &&
+    typeof chrome.storage.session.remove === 'function'
+  ) {
+    return chrome.storage.session;
+  }
+
+  return {
+    async get(keys?: string | string[]) {
+      if (typeof keys === 'string') {
+        return { [keys]: inMemorySessionFallback[keys] };
+      }
+      if (Array.isArray(keys)) {
+        const res: Record<string, unknown> = {};
+        for (const k of keys) res[k] = inMemorySessionFallback[k];
+        return res;
+      }
+      return { ...inMemorySessionFallback };
+    },
+    async set(items: Record<string, unknown>) {
+      for (const k in items) {
+        inMemorySessionFallback[k] = items[k];
+      }
+    },
+    async remove(keys: string | string[]) {
+      if (typeof keys === 'string') {
+        delete inMemorySessionFallback[keys];
+      } else if (Array.isArray(keys)) {
+        for (const k of keys) delete inMemorySessionFallback[k];
+      }
+    },
+  };
+}
+
+/**
+ * Retrieves the raw map of active tab scans from session storage
  */
 export async function getTabScansMap(): Promise<Record<string, TabScanEntry>> {
-  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.get !== 'function') return {};
   try {
-    const data = await chrome.storage.local.get(STORAGE_KEY_TAB_SCANS);
+    const sessionStore = getSessionStorageArea();
+    const data = await sessionStore.get(STORAGE_KEY_TAB_SCANS);
     return (data && (data[STORAGE_KEY_TAB_SCANS] as Record<string, TabScanEntry>)) || {};
   } catch {
     return {};
@@ -348,17 +416,18 @@ export async function getTabScansMap(): Promise<Record<string, TabScanEntry>> {
 }
 
 /**
- * Retrieves the scan result specifically associated with a browser tab.
+ * Retrieves the scan result specifically associated with a browser tab for this session.
  * Validates that the tab's current URL matches the URL that was scanned,
- * and ensures the scan record still exists in history.
+ * and ensures the scan record still exists in persistent history.
  */
 export async function getTabScan(
   tabId: number,
   currentUrl: string
 ): Promise<ScanResult | null> {
-  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.get !== 'function' || !tabId) return null;
+  if (!tabId) return null;
 
   try {
+    const sessionStore = getSessionStorageArea();
     const tabScans = await getTabScansMap();
     const entry = tabScans[String(tabId)];
     if (!entry) return null;
@@ -368,11 +437,9 @@ export async function getTabScan(
     const normalizedCurrent = normalizeScanUrl(currentUrl);
 
     if (normalizedScanned !== normalizedCurrent) {
-      // Tab navigated to a new URL -> invalidate stale tab scan
+      // Tab navigated to a new URL -> invalidate stale tab scan in session
       delete tabScans[String(tabId)];
-      if (typeof chrome.storage.local.set === 'function') {
-        await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
-      }
+      await sessionStore.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
       return null;
     }
 
@@ -384,9 +451,7 @@ export async function getTabScan(
 
     if (!stillExists) {
       delete tabScans[String(tabId)];
-      if (typeof chrome.storage.local.set === 'function') {
-        await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
-      }
+      await sessionStore.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
       return null;
     }
 
@@ -398,16 +463,17 @@ export async function getTabScan(
 }
 
 /**
- * Associates a completed scan result with an active browser tab and exact URL.
+ * Associates a completed scan result with an active browser tab and exact URL in session storage.
  */
 export async function setTabScan(
   tabId: number,
   currentUrl: string,
   result: ScanResult
 ): Promise<void> {
-  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.set !== 'function' || !tabId) return;
+  if (!tabId) return;
 
   try {
+    const sessionStore = getSessionStorageArea();
     const tabScans = await getTabScansMap();
     tabScans[String(tabId)] = {
       url: normalizeScanUrl(currentUrl),
@@ -415,23 +481,24 @@ export async function setTabScan(
       result,
       timestamp: result.timestamp || Date.now(),
     };
-    await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+    await sessionStore.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
   } catch (err) {
     console.warn('[SiteStack Storage] Failed to set tab scan:', err);
   }
 }
 
 /**
- * Invalidates and removes the scan association for a specific tab.
+ * Invalidates and removes the scan association for a specific tab from session storage.
  */
 export async function invalidateTabScan(tabId: number): Promise<void> {
-  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.set !== 'function' || !tabId) return;
+  if (!tabId) return;
 
   try {
+    const sessionStore = getSessionStorageArea();
     const tabScans = await getTabScansMap();
     if (tabScans[String(tabId)]) {
       delete tabScans[String(tabId)];
-      await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+      await sessionStore.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
     }
   } catch (err) {
     console.warn('[SiteStack Storage] Failed to invalidate tab scan:', err);
@@ -445,15 +512,16 @@ export async function invalidateTabScanIfUrlChanged(
   tabId: number,
   newUrl: string
 ): Promise<void> {
-  if (typeof chrome === 'undefined' || typeof chrome.storage?.local?.set !== 'function' || !tabId) return;
+  if (!tabId) return;
 
   try {
+    const sessionStore = getSessionStorageArea();
     const tabScans = await getTabScansMap();
     const entry = tabScans[String(tabId)];
     if (entry) {
       if (normalizeScanUrl(entry.url) !== normalizeScanUrl(newUrl)) {
         delete tabScans[String(tabId)];
-        await chrome.storage.local.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
+        await sessionStore.set({ [STORAGE_KEY_TAB_SCANS]: tabScans });
       }
     }
   } catch (err) {

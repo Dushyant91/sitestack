@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ScanResult } from '../../engine/types';
 import {
   ExtensionRequestMessage,
   ExtensionResponseMessage,
   ScanError,
 } from '../../shared/messages';
+import { normalizeScanUrl } from '../../shared/url';
 
 export interface UseScannerReturn {
   result: ScanResult | null;
@@ -27,6 +28,7 @@ export function useScanner(): UseScannerReturn {
   const [isCached, setIsCached] = useState<boolean>(false);
   const [activeUrl, setActiveUrl] = useState<string>('');
   const [activeDomain, setActiveDomain] = useState<string>('');
+  const latestRequestIdRef = useRef<number>(0);
 
   /**
    * Read-only tab status query: Checks if the active tab has already been scanned
@@ -152,6 +154,8 @@ export function useScanner(): UseScannerReturn {
         setActiveDomain(tab.url);
       }
 
+      const requestId = ++latestRequestIdRef.current;
+
       const message: ExtensionRequestMessage = {
         type: 'MSG_START_SCAN',
         tabId: tab.id,
@@ -159,7 +163,12 @@ export function useScanner(): UseScannerReturn {
         forceFresh,
       };
 
-      chrome.runtime.sendMessage(message, (response: ExtensionResponseMessage) => {
+      chrome.runtime.sendMessage(message, async (response: ExtensionResponseMessage) => {
+        // D4 Guard 1: Verify response belongs to the latest scan request
+        if (requestId !== latestRequestIdRef.current) {
+          return;
+        }
+
         setIsLoading(false);
         if (chrome.runtime.lastError) {
           setError({
@@ -178,6 +187,26 @@ export function useScanner(): UseScannerReturn {
         }
 
         if (response.type === 'MSG_SCAN_SUCCESS') {
+          // D4 Guard 2: Verify active tab ID and URL still match the scanned result
+          try {
+            const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (
+              !currentTab ||
+              currentTab.id !== tab.id ||
+              !currentTab.url ||
+              normalizeScanUrl(currentTab.url) !== normalizeScanUrl(response.result.url)
+            ) {
+              // Active tab navigated away or changed while scan was in-flight -> discard stale UI update
+              setResult(null);
+              setIsScanned(false);
+              return;
+            }
+          } catch {
+            setResult(null);
+            setIsScanned(false);
+            return;
+          }
+
           setResult(response.result);
           setIsScanned(true);
           const age = Date.now() - response.result.timestamp;
