@@ -164,7 +164,19 @@ export async function getScanHistory(): Promise<ScanResult[]> {
 
   try {
     const data = await chrome.storage.local.get(STORAGE_KEY_HISTORY);
-    return normalizeStoredHistory(data[STORAGE_KEY_HISTORY]);
+    const rawStored = data[STORAGE_KEY_HISTORY];
+    const normalized = normalizeStoredHistory(rawStored);
+
+    // Persist sanitized records back to storage if migration/sanitization cleaned up legacy records
+    if (rawStored && JSON.stringify(rawStored) !== JSON.stringify(normalized)) {
+      try {
+        await chrome.storage.local.set({ [STORAGE_KEY_HISTORY]: normalized });
+      } catch (migrateErr) {
+        console.warn('[SiteStack Storage] Legacy migration writeback notice:', migrateErr);
+      }
+    }
+
+    return normalized;
   } catch (err) {
     console.warn('[SiteStack Storage] Failed to retrieve history:', err);
     return [];

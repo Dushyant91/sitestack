@@ -75,9 +75,16 @@ export const SENSITIVE_PARAM_NAMES: ReadonlySet<string> = new Set([
 const COMPOUND_SENSITIVE_PATTERN = /(?:^|[_-])(?:auth|token|secret|password|passwd|session|apikey|api_key|credential|signature|jwt|bearer)(?:[_-]|$)/i;
 
 /**
- * Determines whether a query parameter key is sensitive or a tracking identifier
+ * Known public measurement container ID pattern for Google Analytics / Google Tag Manager
+ * e.g. G-XXXXXXXXXX, GTM-XXXXXXX, UA-XXXXX-Y
  */
-export function isSensitiveQueryParam(rawKey: string): boolean {
+const PUBLIC_MEASUREMENT_ID_PATTERN = /^(?:G-[A-Z0-9]+|GTM-[A-Z0-9]+|UA-[0-9]+-[0-9]+)$/i;
+
+/**
+ * Determines whether a query parameter key (and optional value) is sensitive, a tracking identifier,
+ * or an arbitrary non-measurement identifier.
+ */
+export function isSensitiveQueryParam(rawKey: string, rawVal?: string): boolean {
   if (!rawKey || typeof rawKey !== 'string') return false;
 
   let decoded = rawKey;
@@ -98,6 +105,22 @@ export function isSensitiveQueryParam(rawKey: string): boolean {
 
   // 3. Pattern match for compound credential keys
   if (COMPOUND_SENSITIVE_PATTERN.test(key)) return true;
+
+  // 4. Value-aware inspection for generic 'id' and 'tid' parameters:
+  // SiteStack analytics rules require 'id'/'tid' only for public GTM container IDs
+  // or Google Analytics measurement tags. Arbitrary user, account, or database IDs are stripped.
+  if (key === 'id' || key === 'tid') {
+    if (!rawVal || typeof rawVal !== 'string') return true;
+    let decodedVal = rawVal.trim();
+    try {
+      decodedVal = decodeURIComponent(decodedVal);
+    } catch {
+      // Keep trimmed value
+    }
+    if (!PUBLIC_MEASUREMENT_ID_PATTERN.test(decodedVal)) {
+      return true; // Strip arbitrary non-measurement IDs
+    }
+  }
 
   return false;
 }
@@ -120,7 +143,8 @@ function sanitizeMalformedUrlString(raw: string): string {
     if (!pair) continue;
     const eqIndex = pair.indexOf('=');
     const key = eqIndex === -1 ? pair : pair.slice(0, eqIndex);
-    if (!isSensitiveQueryParam(key)) {
+    const val = eqIndex === -1 ? '' : pair.slice(eqIndex + 1);
+    if (!isSensitiveQueryParam(key, val)) {
       cleanPairs.push(pair);
     }
   }
@@ -163,7 +187,7 @@ export function sanitizeResourceUrl(rawUrl: string): string {
     const cleanParams = new URLSearchParams();
 
     parsed.searchParams.forEach((val, key) => {
-      if (!isSensitiveQueryParam(key)) {
+      if (!isSensitiveQueryParam(key, val)) {
         cleanParams.append(key, val);
       }
     });

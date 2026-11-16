@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { evaluateSignals } from '../../src/engine/evaluator';
 import { HarvestedSignals, ScanResult } from '../../src/engine/types';
 import {
@@ -8,7 +8,8 @@ import {
 } from '../../src/shared/url';
 import {
   sanitizeScanResult,
-  normalizeStoredHistory,
+  getScanHistory,
+  STORAGE_KEY_HISTORY,
 } from '../../src/extension/storage/history';
 import {
   formatExportJson,
@@ -16,7 +17,7 @@ import {
   formatMultiScanExportCsv,
 } from '../../src/popup/utils/export';
 
-describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
+describe('Phase 9.5 & 9.6: Critical Evidence Privacy Remediation & Verification', () => {
   const SYNTHETIC_DIRTY_URL =
     'https://example.com/assets/react.production.min.js?token=SECRET123&session_id=SESSION456&utm_source=test&ver=18.3.1';
 
@@ -46,9 +47,36 @@ describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
       expect(sanitizeResourceUrl('https://www.googletagmanager.com/gtm.js?id=GTM-ABCDE&auth=SECRET_KEY')).toBe(
         'https://www.googletagmanager.com/gtm.js?id=GTM-ABCDE'
       );
+      expect(sanitizeResourceUrl('https://www.google-analytics.com/g/collect?tid=G-99999&session_id=123')).toBe(
+        'https://www.google-analytics.com/g/collect?tid=G-99999'
+      );
     });
 
-    it('1.3. Correctly handles edge cases: mixed-case, encoded, duplicate, empty values, and malformed URLs', () => {
+    it('1.3. Restricts generic id and tid parameters to confirmed public measurement container IDs', () => {
+      // Arbitrary user / account / transaction IDs must be stripped
+      expect(sanitizeResourceUrl('https://example.com/script.js?id=user_secret_12345&ver=2.0')).toBe(
+        'https://example.com/script.js?ver=2.0'
+      );
+      expect(sanitizeResourceUrl('https://example.com/script.js?id=987654321')).toBe(
+        'https://example.com/script.js'
+      );
+      expect(sanitizeResourceUrl('https://example.com/payment.js?tid=txn_checkout_888&v=1.2')).toBe(
+        'https://example.com/payment.js?v=1.2'
+      );
+
+      // Public GTM and GA4 measurement container tags must be preserved
+      expect(sanitizeResourceUrl('https://example.com/tag.js?id=GTM-TEST123')).toBe(
+        'https://example.com/tag.js?id=GTM-TEST123'
+      );
+      expect(sanitizeResourceUrl('https://example.com/collect?tid=G-MEASURE456')).toBe(
+        'https://example.com/collect?tid=G-MEASURE456'
+      );
+      expect(sanitizeResourceUrl('https://example.com/analytics.js?id=UA-12345-1')).toBe(
+        'https://example.com/analytics.js?id=UA-12345-1'
+      );
+    });
+
+    it('1.4. Correctly handles edge cases: mixed-case, encoded, duplicate, empty values, and malformed URLs', () => {
       // Mixed-case parameter names
       const mixedCase = 'https://example.com/script.js?TOKEN=SECRET&Session_ID=S123&UTM_SOURCE=t&ver=2.0';
       expect(sanitizeResourceUrl(mixedCase)).toBe('https://example.com/script.js?ver=2.0');
@@ -86,7 +114,7 @@ describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
       expect(sanitizeResourceUrl(withHash)).toBe('https://example.com/app.js');
     });
 
-    it('1.4. Identifies sensitive parameter names accurately without false positives on legitimate words', () => {
+    it('1.5. Identifies sensitive parameter names accurately without false positives on legitimate words', () => {
       // Sensitive checks
       expect(isSensitiveQueryParam('token')).toBe(true);
       expect(isSensitiveQueryParam('access_token')).toBe(true);
@@ -103,14 +131,12 @@ describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
       expect(isSensitiveQueryParam('ver')).toBe(false);
       expect(isSensitiveQueryParam('v')).toBe(false);
       expect(isSensitiveQueryParam('version')).toBe(false);
-      expect(isSensitiveQueryParam('id')).toBe(false);
-      expect(isSensitiveQueryParam('tid')).toBe(false);
       expect(isSensitiveQueryParam('author')).toBe(false); // contains "auth", but not credential
       expect(isSensitiveQueryParam('page')).toBe(false);
       expect(isSensitiveQueryParam('lang')).toBe(false);
     });
 
-    it('1.5. Sanitizes truncated evidence strings containing residual query parameters', () => {
+    it('1.6. Sanitizes truncated evidence strings containing residual query parameters', () => {
       const truncatedSource = 'https://example.com/assets/react.min.js?token=SECRET123&session_id=SES...';
       const clean = sanitizeResourceEvidenceString(truncatedSource);
       expect(clean).toBe('https://example.com/assets/react.min.js');
@@ -186,12 +212,66 @@ describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
         'https://example-wp.com/wp-includes/js/wp-emoji-release.min.js?ver=6.4.2'
       );
     });
+
+    it('2.3. Audits all non-resource evidence types (DOM, global, meta, header, inferred) to ensure zero URL leakage', () => {
+      const signals: HarvestedSignals = {
+        url: 'https://example.com/app?token=SECRET_PAGE',
+        resources: [],
+        meta: [{ name: 'generator', content: 'WordPress 6.4.2' }],
+        dom: [{ selector: '[ng-version]', attribute: 'ng-version', value: '17.2.1' }],
+        globals: {
+          wp: {},
+          React: { version: '18.3.1' },
+        },
+        headers: {
+          server: 'Vercel',
+        },
+      };
+
+      const result = evaluateSignals(signals);
+      expect(result).toBeDefined();
+
+      for (const tech of result.technologies) {
+        for (const ev of tech.evidence) {
+          if (ev.type !== 'resource') {
+            // Non-resource source must be structural selector, global path, or meta tag
+            expect(ev.source).not.toContain('http://');
+            expect(ev.source).not.toContain('https://');
+            expect(ev.source).not.toContain('token=');
+            expect(ev.source).not.toContain('SECRET');
+
+            // Non-resource matchedValue must not contain URLs or query parameters
+            if (ev.matchedValue) {
+              expect(ev.matchedValue).not.toContain('http://');
+              expect(ev.matchedValue).not.toContain('https://');
+              expect(ev.matchedValue).not.toContain('?');
+            }
+          }
+        }
+      }
+    });
   });
 
   // =========================================================================
   // 3. Storage Persistence & Legacy Record Sanitization (history.ts)
   // =========================================================================
   describe('3. Storage Sanitization & Legacy Migration (history.ts)', () => {
+    let mockStorage: Record<string, unknown> = {};
+
+    beforeEach(() => {
+      mockStorage = {};
+      (global as unknown as { chrome: unknown }).chrome = {
+        storage: {
+          local: {
+            get: vi.fn(async (key: string) => ({ [key]: mockStorage[key] })),
+            set: vi.fn(async (obj: Record<string, unknown>) => {
+              Object.assign(mockStorage, obj);
+            }),
+          },
+        },
+      };
+    });
+
     it('3.1. Strips sensitive parameters during sanitizeScanResult for fresh records', () => {
       const signals: HarvestedSignals = {
         url: 'https://example.com/app?token=SECRET_PAGE',
@@ -212,13 +292,13 @@ describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
       expect(serialized).not.toContain('SECRET_PAGE');
     });
 
-    it('3.2. Sanitizes legacy history records containing unsanitized evidence on read/migration', () => {
-      // Construct a legacy scan result simulating pre-Phase-9.5 storage containing raw secrets
+    it('3.2. Sanitizes legacy history records and persists them back to chrome.storage.local', async () => {
+      // Simulate raw legacy storage containing pre-Phase-9.5 unsanitized data
       const legacyDirtyScan = {
         id: 'legacy-scan-1',
         url: 'https://legacy-site.com/checkout?token=OLD_SECRET',
         domain: 'legacy-site.com',
-        timestamp: Date.now() - 100000,
+        timestamp: 1700000000000,
         scanDurationMs: 2,
         technologies: [
           {
@@ -229,6 +309,8 @@ describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
             confidenceScore: 100,
             confidenceTier: 'high',
             detectionType: 'direct',
+            icon: '',
+            description: '',
             evidence: [
               {
                 type: 'resource',
@@ -240,28 +322,44 @@ describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
             website: 'https://react.dev',
           },
         ],
+        stats: { total: 1, high: 1, medium: 0, low: 0 },
       };
 
-      // When legacy records are read via normalizeStoredHistory
-      const loadedHistory = normalizeStoredHistory([legacyDirtyScan]);
-      expect(loadedHistory).toHaveLength(1);
+      mockStorage[STORAGE_KEY_HISTORY] = [legacyDirtyScan];
 
-      const cleanedScan = loadedHistory[0];
+      // Call getScanHistory()
+      const retrieved = await getScanHistory();
+      expect(retrieved).toHaveLength(1);
+
+      const cleanedScan = retrieved[0];
       const cleanedEv = cleanedScan.technologies[0].evidence[0];
 
-      // Verify legacy evidence was sanitized upon hydration
+      // 1. In-memory returned data is sanitized
       expect(cleanedEv.source).toBe('https://legacy-site.com/react.js?ver=18.3.1');
       expect(cleanedEv.source).not.toContain('DIRTY_TOKEN_123');
-      expect(cleanedEv.source).not.toContain('DIRTY_SESS_456');
-
       expect(cleanedEv.matchedValue).toBe('https://legacy-site.com/react.js?ver=18.3.1');
       expect(cleanedEv.matchedValue).not.toContain('DIRTY_TOKEN_123');
-      expect(cleanedEv.matchedValue).not.toContain('DIRTY_SESS_456');
 
-      const fullString = JSON.stringify(cleanedScan);
-      expect(fullString).not.toContain('DIRTY_TOKEN_123');
-      expect(fullString).not.toContain('DIRTY_SESS_456');
-      expect(fullString).not.toContain('OLD_SECRET');
+      // 2. Proves sanitized records were persisted back to chrome.storage.local
+      const storedAfter = mockStorage[STORAGE_KEY_HISTORY] as ScanResult[];
+      expect(storedAfter).toBeDefined();
+      const storedString = JSON.stringify(storedAfter);
+      expect(storedString).not.toContain('DIRTY_TOKEN_123');
+      expect(storedString).not.toContain('DIRTY_SESS_456');
+      expect(storedString).not.toContain('OLD_SECRET');
+      expect(storedString).toContain('ver=18.3.1');
+
+      // 3. Re-reading history returns clean data without restoring old values
+      const secondRead = await getScanHistory();
+      const secondString = JSON.stringify(secondRead);
+      expect(secondString).not.toContain('DIRTY_TOKEN_123');
+
+      // 4. Non-sensitive scan metadata remains completely intact
+      expect(secondRead[0].domain).toBe('legacy-site.com');
+      expect(secondRead[0].timestamp).toBe(1700000000000);
+      expect(secondRead[0].technologies[0].name).toBe('React');
+      expect(secondRead[0].technologies[0].version).toBe('18.3.1');
+      expect(secondRead[0].stats?.total).toBe(1);
     });
   });
 
@@ -287,6 +385,8 @@ describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
           detectionType: 'direct',
           confidenceReason: 'High confidence direct proof',
           isInferred: false,
+          icon: '',
+          description: '',
           evidence: [
             {
               type: 'resource',
@@ -295,8 +395,6 @@ describe('Phase 9.5: Critical Evidence URL Privacy Remediation', () => {
               weight: 35,
             },
           ],
-          icon: '',
-          description: '',
           website: 'https://react.dev',
         },
       ],
