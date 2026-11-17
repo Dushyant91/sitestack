@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tailwind Inline SSR</title>
+  <!-- Inlined Critical CSS Custom Properties (e.g. Astro / Next.js SSR) -->
+  <style>
+    *, ::before, ::after {
+      --tw-border-spacing-x: 0;
+      --tw-border-spacing-y: 0;
+      --tw-ring-offset-shadow: 0 0 #0000;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-shadow: 0 0 #0000;
+    }
+  </style>
+  <link rel="stylesheet" href="/_next/static/css/global.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-6 space-y-4">
+  <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
+    <h1 class="text-2xl font-extrabold tracking-tight text-emerald-400">SSR Application</h1>
+    <span class="px-2.5 py-1 text-xs font-semibold bg-emerald-950 text-emerald-400 rounded-full ring-1 ring-emerald-500/20">Active</span>
+  </header>
+  <main class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="p-5 bg-slate-900 rounded-xl border border-slate-800 shadow-sm hover:border-slate-700">Card 1</div>
+    <div class="p-5 bg-slate-900 rounded-xl border border-slate-800 shadow-sm hover:border-slate-700">Card 2</div>
+  </main>
+</body>
+</html>
