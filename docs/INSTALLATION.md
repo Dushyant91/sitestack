@@ -15,8 +15,9 @@ This guide provides step-by-step instructions for installing and running SiteSta
 ## Method 1: Install from Pre-Built Release Archive (Recommended)
 
 ### Step 1: Download the Release Archive
-Download the latest verified release archive from [GitHub Releases](https://github.com/Dushyant91/sitestack/releases):
-- **Package:** [Download sitestack-v1.1.0-stable.zip](https://github.com/Dushyant91/sitestack/releases)
+Download the latest verified release archive:
+- **Direct Download:** [Download sitestack-v1.1.0-stable.zip](https://github.com/Dushyant91/sitestack/releases/download/v1.1.0/sitestack-v1.1.0-stable.zip)
+- **All Releases:** [GitHub Releases](https://github.com/Dushyant91/sitestack/releases)
 - **SHA-256 Checksum:** `C81887146F96C9DFB5D8C2950698DAB775D8CAD1248046DEB0E7E74973B038CD`
 
 ### Step 2: Verify Archive Integrity (Optional but Recommended)
