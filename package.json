@@ -1,7 +1,7 @@
 {
   "name": "sitestack",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Know what's powering any website — High-precision technology intelligence Chrome extension.",
   "type": "module",
   "scripts": {

@@ -75,11 +75,12 @@ function Render-Icon16() {
         $bmp.SetPixel($x, 6, $white)
     }
 
-    # Stack Layer 2 (middle): y=8, x=4..8 (5px) + detection indicator dot at x=11
+    # Stack Layer 2 (middle): y=8, x=4..8 (5px) + detection indicator dot at x=11 (Sky blue #38BDF8)
     for ($x = 4; $x -le 8; $x++) {
         $bmp.SetPixel($x, 8, $white)
     }
-    $bmp.SetPixel(11, 8, $white)
+    $sky = [System.Drawing.Color]::FromArgb(255, 56, 189, 248)
+    $bmp.SetPixel(11, 8, $sky)
 
     # Stack Layer 3 (bottom): y=10, 11, x=4..11 (2px height)
     for ($x = 4; $x -le 11; $x++) {
@@ -146,7 +147,8 @@ function Render-Icon32() {
     # Layer 2
     $l2 = Create-RoundedPath 7.5 17.5 12.5 2.2 1
     $g.FillPath($whiteBrush, $l2)
-    $g.FillEllipse($whiteBrush, 22, 17.5, 2.2, 2.2)
+    $skyBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 56, 189, 248))
+    $g.FillEllipse($skyBrush, 22, 17.5, 2.2, 2.2)
 
     # Layer 3
     $l3 = Create-RoundedPath 7.5 22 17 2.2 1
@@ -215,7 +217,8 @@ function Render-Icon48() {
 
     $l2 = Create-RoundedPath 11.5 26.5 18 3.5 1.5
     $g.FillPath($whiteBrush, $l2)
-    $g.FillEllipse($whiteBrush, 32.5, 26.5, 3.5, 3.5)
+    $skyBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 56, 189, 248))
+    $g.FillEllipse($skyBrush, 32.5, 26.5, 3.5, 3.5)
 
     $l3 = Create-RoundedPath 11.5 33 25 3.5 1.5
     $g.FillPath($whiteBrush, $l3)
@@ -286,8 +289,9 @@ function Render-Icon128() {
     # Layer 2 (Platform / CMS / Libraries)
     $l2Path = Create-RoundedPath 32 70 48 9.5 4
     $g.FillPath($whiteBrush, $l2Path)
-    # Layer 2 right indicator dot (detection pulse)
-    $g.FillEllipse($whiteBrush, 87, 71, 8, 8)
+    # Layer 2 right indicator dot (active detection pulse - Sky blue #38BDF8)
+    $skyBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 56, 189, 248))
+    $g.FillEllipse($skyBrush, 87, 71, 8, 8)
 
     # Layer 3 (Analytics / Infrastructure)
     $l3Path = Create-RoundedPath 32 86 64 9.5 4

@@ -32,6 +32,17 @@ export async function performTabScan(
   tabUrl: string,
   forceFresh = false
 ): Promise<ScanResult> {
+  // Pre-validate URL: never attempt script injection on restricted/unsupported pages
+  const urlValidation = validateScannableUrl(tabUrl);
+  if (!urlValidation.scannable) {
+    const error: ScanError = {
+      code: urlValidation.code || 'RESTRICTED_URL',
+      message: urlValidation.message || 'Browser internal and system pages cannot be analyzed. SiteStack inspects regular websites (HTTP/HTTPS), not browser-internal pages.',
+      url: tabUrl,
+    };
+    throw error;
+  }
+
   // Check tab-specific session cache first if not forced fresh
   if (!forceFresh) {
     const cached = await getTabScan(tabId, tabUrl);
@@ -89,6 +100,23 @@ export async function performTabScan(
         const error: ScanError = {
           code: 'TAB_NOT_FOUND',
           message: 'The tab was closed or could not be found.',
+          url: tabUrl,
+        };
+        throw error;
+      }
+
+      // Check if error indicates a restricted browser URL or security policy restriction
+      if (
+        errStr.includes('Cannot access contents of the page') ||
+        errStr.includes('ExtensionsSettings policy') ||
+        errStr.includes('cannot be scripted') ||
+        errStr.includes('chrome://') ||
+        errStr.includes('brave://') ||
+        errStr.includes('edge://')
+      ) {
+        const error: ScanError = {
+          code: 'RESTRICTED_URL',
+          message: 'Browser internal and system pages cannot be analyzed. SiteStack inspects regular websites (HTTP/HTTPS), not browser-internal pages.',
           url: tabUrl,
         };
         throw error;
@@ -184,7 +212,7 @@ async function handleScanMessage(
   // If tab info wasn't provided, query currently active tab
   if (!targetTabId || !targetUrl) {
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!activeTab || !activeTab.id || !activeTab.url) {
+    if (!activeTab || typeof activeTab.id !== 'number') {
       return {
         type: 'MSG_SCAN_ERROR',
         error: {
@@ -194,7 +222,7 @@ async function handleScanMessage(
       };
     }
     targetTabId = activeTab.id;
-    targetUrl = activeTab.url;
+    targetUrl = activeTab.url || activeTab.pendingUrl || '';
   }
 
   // Validate URL scheme & security restrictions
@@ -204,7 +232,7 @@ async function handleScanMessage(
       type: 'MSG_SCAN_ERROR',
       error: {
         code: urlValidation.code || 'RESTRICTED_URL',
-        message: urlValidation.message || 'Cannot scan restricted page.',
+        message: urlValidation.message || 'Browser internal and system pages cannot be analyzed. SiteStack inspects regular websites (HTTP/HTTPS), not browser-internal pages.',
         url: targetUrl,
       },
     };

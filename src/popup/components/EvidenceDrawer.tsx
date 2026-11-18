@@ -36,7 +36,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
 }) => {
   if (isInferred) {
     return (
-      <div className="mt-2.5 pt-2.5 border-t border-zinc-800/80 text-[11px] font-mono space-y-2.5 bg-violet-950/20 rounded-lg p-2.5 border border-violet-500/20">
+      <div className="mt-2.5 pt-2.5 border-t border-white/[0.08] text-[11px] font-mono space-y-2.5 bg-violet-950/20 rounded-lg p-2.5 border border-violet-500/20">
         <div className="flex items-center justify-between text-[10px] uppercase font-semibold tracking-wider text-violet-300">
           <span className="flex items-center gap-1.5">
             <GitFork className="w-3.5 h-3.5 text-violet-400" />
@@ -47,7 +47,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
           </span>
         </div>
 
-        <div className="p-2 rounded bg-zinc-900/80 border border-violet-500/30 text-[11px] text-zinc-300 leading-relaxed font-sans space-y-1.5">
+        <div className="p-2.5 rounded-lg bg-zinc-900/80 border border-violet-500/30 text-[11px] text-zinc-300 leading-relaxed font-sans space-y-1.5">
           <div className="text-white font-medium flex items-center gap-1.5">
             <span>Inferred from {parentDependency || 'Parent Framework'}</span>
           </div>
@@ -56,7 +56,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
               {confidenceReason}
             </p>
           ) : (
-            <p className="text-zinc-400 text-[10px]">
+            <p className="text-zinc-400 text-[10px] leading-relaxed">
               This technology was inferred through its architectural relationship with <strong className="text-zinc-200">{parentDependency || 'detected framework'}</strong>. No direct browser signals were directly exposed in the client runtime.
             </p>
           )}
@@ -77,7 +77,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
                   <code className="text-zinc-300 truncate max-w-[200px]" title={ev.source}>
                     {ev.source}
                   </code>
-                  <span className="text-violet-400 font-mono text-[9px]">+{ev.weight}</span>
+                  <span className="text-violet-400 font-mono text-[9px]">+{ev.weight} pts</span>
                 </div>
               ))}
           </div>
@@ -90,9 +90,9 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
               href={website}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-violet-400 hover:text-violet-300 flex items-center gap-0.5 transition-colors"
+              className="text-violet-400 hover:text-violet-300 flex items-center gap-0.5 transition-colors font-medium"
             >
-              <span>Visit documentation</span>
+              <span>Documentation</span>
               <ArrowUpRight className="w-2.5 h-2.5" />
             </a>
           </div>
@@ -102,7 +102,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
   }
 
   return (
-    <div className="mt-2.5 pt-2.5 border-t border-zinc-800/80 text-[11px] font-mono space-y-2 bg-zinc-950/60 rounded-lg p-2.5 border border-zinc-800/50">
+    <div className="mt-2.5 pt-2.5 border-t border-white/[0.08] text-[11px] font-mono space-y-2 bg-black/40 rounded-lg p-2.5 border border-white/[0.06]">
       <div className="flex items-center justify-between text-[10px] uppercase font-semibold tracking-wider text-zinc-400">
         <span className="flex items-center gap-1.5">
           <Info className="w-3 h-3 text-indigo-400" />
@@ -114,7 +114,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
       </div>
 
       {confidenceReason && (
-        <div className="p-2 rounded bg-indigo-950/20 border border-indigo-500/25 text-[10px] text-zinc-300 font-sans leading-relaxed">
+        <div className="p-2.5 rounded-lg bg-indigo-950/20 border border-indigo-500/25 text-[10px] text-zinc-300 font-sans leading-relaxed">
           <span className="text-indigo-300 font-semibold block mb-0.5">Detection Analysis:</span>
           {confidenceReason}
         </div>
@@ -142,28 +142,28 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
           return (
             <div
               key={idx}
-              className="flex items-start justify-between gap-2 p-1.5 rounded bg-zinc-900/60 border border-zinc-800/40 text-[10px]"
+              className="flex items-start justify-between gap-2 p-1.5 rounded bg-white/[0.02] border border-white/[0.05] text-[10px]"
             >
               <div className="flex items-start gap-1.5 min-w-0">
                 <span
-                  className={`px-1 py-0.2 rounded text-[8px] font-bold border shrink-0 uppercase ${badge.color}`}
+                  className={`px-1 py-0.5 rounded text-[8px] font-bold border shrink-0 uppercase ${badge.color}`}
                 >
                   {badge.label}
                 </span>
                 <div className="min-w-0">
-                  <code className="text-zinc-200 font-bold block truncate max-w-[200px]" title={ev.source}>
+                  <code className="text-zinc-200 font-bold block truncate max-w-[210px]" title={ev.source}>
                     {ev.source}
                   </code>
                   {ev.matchedValue && (
-                    <span className="text-zinc-500 text-[9px] block truncate max-w-[200px]" title={ev.matchedValue}>
+                    <span className="text-zinc-400 text-[9px] block truncate max-w-[210px]" title={ev.matchedValue}>
                       Match: {ev.matchedValue}
                     </span>
                   )}
                 </div>
               </div>
 
-              <span className="text-emerald-400 font-semibold font-mono text-[9px] shrink-0">
-                +{ev.weight}
+              <span className="text-zinc-300 font-semibold font-mono text-[9px] shrink-0 bg-white/[0.05] px-1.5 py-0.5 rounded border border-white/[0.08]">
+                +{ev.weight} pts
               </span>
             </div>
           );
@@ -171,15 +171,15 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({
       </div>
 
       {website && (
-        <div className="pt-1 flex items-center justify-between text-[10px] font-sans border-t border-zinc-800/60">
+        <div className="pt-1.5 flex items-center justify-between text-[10px] font-sans border-t border-white/[0.06]">
           <span className="text-zinc-500">Official Website</span>
           <a
             href={website}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5 transition-colors"
+            className="text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5 transition-colors font-medium"
           >
-            <span>Visit documentation</span>
+            <span>Documentation</span>
             <ArrowUpRight className="w-2.5 h-2.5" />
           </a>
         </div>

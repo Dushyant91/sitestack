@@ -77,11 +77,11 @@ export function validateScannableUrl(url: string | undefined): {
   code?: ScanErrorCode;
   message?: string;
 } {
-  if (!url || typeof url !== 'string') {
+  if (!url || typeof url !== 'string' || !url.trim()) {
     return {
       scannable: false,
-      code: 'UNSUPPORTED_SCHEME',
-      message: 'No valid URL detected on active tab.',
+      code: 'RESTRICTED_URL',
+      message: 'Browser internal and system pages cannot be analyzed. SiteStack inspects regular websites (HTTP/HTTPS), not browser-internal pages.',
     };
   }
 
@@ -107,12 +107,14 @@ export function validateScannableUrl(url: string | undefined): {
     trimmed.startsWith('edge://') ||
     trimmed.startsWith('brave://') ||
     trimmed.startsWith('about:') ||
-    trimmed.startsWith('view-source:')
+    trimmed.startsWith('view-source:') ||
+    trimmed.startsWith('https://chromewebstore.google.com') ||
+    trimmed.startsWith('https://chrome.google.com/webstore')
   ) {
     return {
       scannable: false,
       code: 'RESTRICTED_URL',
-      message: 'Browser internal and system pages cannot be analyzed by extension security policy.',
+      message: 'Browser internal and system pages cannot be analyzed. SiteStack inspects regular websites (HTTP/HTTPS), not browser-internal pages.',
     };
   }
 

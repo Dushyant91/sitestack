@@ -5,6 +5,7 @@ import { MetricsBanner } from '../../src/popup/components/MetricsBanner';
 import { SearchBar } from '../../src/popup/components/SearchBar';
 import { TechCard } from '../../src/popup/components/TechCard';
 import { CategoryNav } from '../../src/popup/components/CategoryNav';
+import { ErrorState } from '../../src/popup/components/ErrorState';
 import { formatRelativeTime, formatDomain } from '../../src/popup/utils/formatters';
 import { exportToJson, exportToCsv } from '../../src/popup/utils/export';
 import { DetectedTechnology, ScanResult } from '../../src/engine/types';
@@ -241,5 +242,88 @@ describe('React UI Components (Phase 3)', () => {
     URL.revokeObjectURL = originalRevokeObjectURL;
     document.body.appendChild = originalAppend;
     document.body.removeChild = originalRemove;
+    cleanup();
+  });
+
+  it('ErrorState renders "Page Not Supported" for restricted URLs without retry button, and "Scan Failed" for genuine failures', () => {
+    const onRetry = vi.fn();
+
+    // 1. Restricted URL (e.g. brave://extensions or chrome://extensions)
+    act(() => {
+      root.render(
+        <ErrorState
+          error={{
+            code: 'RESTRICTED_URL',
+            message: 'Browser internal and system pages cannot be analyzed. SiteStack inspects regular websites (HTTP/HTTPS), not browser-internal pages.',
+          }}
+          onRetry={onRetry}
+        />
+      );
+    });
+
+    expect(container.textContent).toContain('Page Not Supported');
+    expect(container.textContent).toContain('SiteStack can inspect regular websites, not browser-internal pages.');
+    expect(container.textContent).toContain('Navigate to any regular website (HTTP/HTTPS) and open SiteStack.');
+    expect(container.textContent).not.toContain('Scan Failed');
+    expect(container.querySelector('button')).toBeNull();
+
+    // 2. Unsupported Scheme (e.g. file:///)
+    act(() => {
+      root.render(
+        <ErrorState
+          error={{
+            code: 'UNSUPPORTED_SCHEME',
+            message: 'Unsupported protocol (file://). SiteStack analyzes HTTP and HTTPS websites.',
+          }}
+          onRetry={onRetry}
+        />
+      );
+    });
+
+    expect(container.textContent).toContain('Page Not Supported');
+    expect(container.querySelector('button')).toBeNull();
+
+    // 3. Genuine Failure (e.g. INJECTION_FAILED)
+    act(() => {
+      root.render(
+        <ErrorState
+          error={{
+            code: 'INJECTION_FAILED',
+            message: 'Failed to inspect website. Ensure page is fully loaded and retry.',
+          }}
+          onRetry={onRetry}
+        />
+      );
+    });
+
+    expect(container.textContent).toContain('Scan Failed');
+    expect(container.textContent).toContain('Failed to inspect website.');
+    expect(container.querySelector('button')).not.toBeNull();
+
+    // Click retry
+    const retryBtn = container.querySelector('button') as HTMLButtonElement;
+    act(() => {
+      retryBtn.click();
+    });
+    expect(onRetry).toHaveBeenCalledTimes(1);
+
+    // 4. Page Unavailable (e.g. DNS / Connection Failure)
+    act(() => {
+      root.render(
+        <ErrorState
+          error={{
+            code: 'PAGE_UNAVAILABLE',
+            message: 'Website cannot be reached (DNS_PROBE_FINISHED_NXDOMAIN).',
+          }}
+          onRetry={onRetry}
+        />
+      );
+    });
+
+    expect(container.textContent).toContain('Page Unavailable');
+    expect(container.textContent).toContain('Website cannot be reached');
+    expect(container.querySelector('button')).not.toBeNull();
+
+    cleanup();
   });
 });

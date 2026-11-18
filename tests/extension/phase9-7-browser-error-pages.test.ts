@@ -29,13 +29,20 @@ describe('Phase 9.7: Browser Error Page vs. Empty Scan Classification Suite', ()
       }
     });
 
-    it('1.2. Categorizes chrome:// and browser internal pages as RESTRICTED_URL without injecting scripts', () => {
+    it('1.2. Categorizes chrome://, brave://, and browser internal pages as RESTRICTED_URL without injecting scripts', () => {
       const restrictedUrls = [
         'chrome://extensions/',
         'chrome://settings/',
+        'chrome://flags/',
+        'brave://extensions/',
+        'brave://settings/',
+        'brave://shields/',
         'chrome-extension://abcdefghijklmnop/popup.html',
         'about:blank',
         'edge://settings/',
+        'https://chromewebstore.google.com/detail/sitestack',
+        '',
+        '   ',
       ];
 
       for (const url of restrictedUrls) {
@@ -43,7 +50,14 @@ describe('Phase 9.7: Browser Error Page vs. Empty Scan Classification Suite', ()
         expect(result.scannable).toBe(false);
         expect(result.code).toBe('RESTRICTED_URL');
         expect(result.message).toContain('Browser internal and system pages cannot be analyzed');
+        expect(result.message).toContain('SiteStack inspects regular websites');
       }
+
+      // Undefined URL (e.g. when browser omits URL on protected page)
+      const undefResult = validateScannableUrl(undefined);
+      expect(undefResult.scannable).toBe(false);
+      expect(undefResult.code).toBe('RESTRICTED_URL');
+      expect(undefResult.message).toContain('SiteStack inspects regular websites');
     });
 
     it('1.3. Allows standard HTTP and HTTPS websites through pre-validation', () => {

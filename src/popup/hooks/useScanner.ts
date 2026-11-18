@@ -4,6 +4,7 @@ import {
   ExtensionRequestMessage,
   ExtensionResponseMessage,
   ScanError,
+  validateScannableUrl,
 } from '../../shared/messages';
 import { normalizeScanUrl } from '../../shared/url';
 
@@ -51,7 +52,7 @@ export function useScanner(): UseScannerReturn {
 
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab || !tab.id || !tab.url) {
+      if (!tab || typeof tab.id !== 'number') {
         setIsLoading(false);
         setError({
           code: 'TAB_NOT_FOUND',
@@ -60,18 +61,44 @@ export function useScanner(): UseScannerReturn {
         return;
       }
 
-      setActiveUrl(tab.url);
+      const rawUrl = tab.url || tab.pendingUrl || '';
+
+      // Check for restricted / unsupported browser pages
+      const urlValidation = validateScannableUrl(rawUrl);
+      if (!urlValidation.scannable) {
+        setIsLoading(false);
+        setActiveUrl(rawUrl);
+        if (rawUrl) {
+          try {
+            const parsed = new URL(rawUrl);
+            setActiveDomain(parsed.hostname || rawUrl);
+          } catch {
+            setActiveDomain(rawUrl);
+          }
+        } else {
+          setActiveDomain('Browser Page');
+        }
+
+        setError({
+          code: urlValidation.code || 'RESTRICTED_URL',
+          message: urlValidation.message || 'Browser internal and system pages cannot be analyzed. SiteStack inspects regular websites (HTTP/HTTPS), not browser-internal pages.',
+          url: rawUrl,
+        });
+        return;
+      }
+
+      setActiveUrl(rawUrl);
       try {
-        const parsed = new URL(tab.url);
+        const parsed = new URL(rawUrl);
         setActiveDomain(parsed.hostname);
       } catch {
-        setActiveDomain(tab.url);
+        setActiveDomain(rawUrl);
       }
 
       const message: ExtensionRequestMessage = {
         type: 'MSG_GET_TAB_STATUS',
         tabId: tab.id,
-        url: tab.url,
+        url: rawUrl,
       };
 
       chrome.runtime.sendMessage(message, (response: ExtensionResponseMessage) => {
@@ -137,7 +164,7 @@ export function useScanner(): UseScannerReturn {
 
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab || !tab.id || !tab.url) {
+      if (!tab || typeof tab.id !== 'number') {
         setIsLoading(false);
         setError({
           code: 'TAB_NOT_FOUND',
@@ -146,12 +173,38 @@ export function useScanner(): UseScannerReturn {
         return;
       }
 
-      setActiveUrl(tab.url);
+      const rawUrl = tab.url || tab.pendingUrl || '';
+
+      // Check for restricted / unsupported browser pages
+      const urlValidation = validateScannableUrl(rawUrl);
+      if (!urlValidation.scannable) {
+        setIsLoading(false);
+        setActiveUrl(rawUrl);
+        if (rawUrl) {
+          try {
+            const parsed = new URL(rawUrl);
+            setActiveDomain(parsed.hostname || rawUrl);
+          } catch {
+            setActiveDomain(rawUrl);
+          }
+        } else {
+          setActiveDomain('Browser Page');
+        }
+
+        setError({
+          code: urlValidation.code || 'RESTRICTED_URL',
+          message: urlValidation.message || 'Browser internal and system pages cannot be analyzed. SiteStack inspects regular websites (HTTP/HTTPS), not browser-internal pages.',
+          url: rawUrl,
+        });
+        return;
+      }
+
+      setActiveUrl(rawUrl);
       try {
-        const parsed = new URL(tab.url);
+        const parsed = new URL(rawUrl);
         setActiveDomain(parsed.hostname);
       } catch {
-        setActiveDomain(tab.url);
+        setActiveDomain(rawUrl);
       }
 
       const requestId = ++latestRequestIdRef.current;
@@ -159,7 +212,7 @@ export function useScanner(): UseScannerReturn {
       const message: ExtensionRequestMessage = {
         type: 'MSG_START_SCAN',
         tabId: tab.id,
-        url: tab.url,
+        url: rawUrl,
         forceFresh,
       };
 

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Sparkles, Play } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { useScanner } from './hooks/useScanner';
+import { SiteStackLogo } from './components/SiteStackLogo';
 import { Header } from './components/Header';
 import { MetricsBanner } from './components/MetricsBanner';
 import { SearchBar } from './components/SearchBar';
@@ -155,16 +156,14 @@ export const App: React.FC = () => {
       ) : !isScanned && !historyOverrideScan ? (
         /* Ready to Scan Zero-State */
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-3 shadow-lg shadow-indigo-500/5">
-            <Sparkles className="w-6 h-6 text-indigo-400" />
-          </div>
-          <h3 className="text-sm font-bold text-white mb-1">Ready to Scan</h3>
-          <p className="text-[11px] text-zinc-400 max-w-[260px] leading-relaxed mb-4">
+          <SiteStackLogo size={48} showGlow={true} className="mb-4 shadow-xl" />
+          <h3 className="text-sm font-bold text-white mb-1.5">Ready to Scan</h3>
+          <p className="text-[11px] text-zinc-400 max-w-[260px] leading-relaxed mb-5">
             Analyze <span className="text-zinc-200 font-mono font-medium">{activeDomain || 'this website'}</span> to inspect frontend frameworks, CMS platforms, analytics, and libraries.
           </p>
           <button
             onClick={handleRescan}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-xs shadow-lg shadow-indigo-600/30 transition-all active:scale-[0.98] flex items-center gap-2"
+            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs shadow-lg shadow-indigo-600/30 transition-all active:scale-[0.98] flex items-center gap-2"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>Scan Website</span>

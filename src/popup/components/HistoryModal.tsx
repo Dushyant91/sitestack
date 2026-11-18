@@ -200,12 +200,12 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter by domain or technology..."
-              className="w-full pl-7 pr-3 py-1 bg-zinc-900/80 border border-zinc-800 rounded-lg text-[11px] text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500/60 transition-colors font-mono"
+              className="w-full pl-7 pr-7 py-1.5 bg-white/[0.03] border border-white/[0.08] rounded-lg text-[11px] text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500/70 focus:bg-white/[0.06] transition-all font-mono"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 text-[10px]"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 text-[10px] p-0.5"
               >
                 ✕
               </button>
@@ -233,7 +233,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                 <button
                   onClick={handleDeleteSelected}
                   title="Delete selected scans"
-                  className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/25 hover:bg-rose-500/20 transition-all flex items-center gap-1 active:scale-95"
                 >
                   <Trash2 className="w-2.5 h-2.5" />
                   <span>Delete</span>
@@ -243,7 +243,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
               <button
                 onClick={handleBatchExportJson}
                 title="Export selected or all scans as JSON"
-                className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700/60 transition-all flex items-center gap-1"
+                className="px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] transition-all flex items-center gap-1 active:scale-95"
               >
                 <FileJson className="w-2.5 h-2.5 text-indigo-400" />
                 <span>JSON</span>
@@ -252,7 +252,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
               <button
                 onClick={handleBatchExportCsv}
                 title="Export selected or all scans as CSV spreadsheet"
-                className="px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700/60 transition-all flex items-center gap-1"
+                className="px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] transition-all flex items-center gap-1 active:scale-95"
               >
                 <FileSpreadsheet className="w-2.5 h-2.5 text-emerald-400" />
                 <span>CSV</span>

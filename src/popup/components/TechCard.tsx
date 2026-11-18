@@ -25,64 +25,65 @@ export const TechCard: React.FC<TechCardProps> = ({
   const tierBadgeStyle = tierBadges[technology.confidenceTier] || tierBadges.medium;
 
   return (
-    <div className="rounded-xl p-2.5 bg-white/[0.02] border border-white/[0.07] hover:border-zinc-700/70 transition-all duration-200 group">
+    <div className="rounded-xl p-2.5 bg-white/[0.025] border border-white/[0.07] hover:border-white/[0.14] hover:bg-white/[0.035] transition-all duration-150 group">
       {/* Top Header Row (Clickable to toggle Evidence) */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-start justify-between cursor-pointer select-none"
+        className="flex items-start justify-between cursor-pointer select-none gap-2"
         title="Click to view evidence chain"
       >
-        <div className="flex items-start gap-2.5 min-w-0">
+        {/* Left Column: Icon + Name + Version + Description */}
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
           <TechIcon id={technology.id} name={technology.name} className="w-7 h-7 shrink-0 mt-0.5" />
 
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors truncate">
+              <span className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
                 {technology.name}
               </span>
 
               {technology.version && (
-                <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-medium bg-zinc-800 text-zinc-300 border border-zinc-700/60 shrink-0">
+                <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-medium bg-white/[0.06] text-zinc-300 border border-white/[0.1] shrink-0">
                   v{technology.version}
                 </span>
               )}
 
               {technology.isInferred && (
-                <span className="text-[8px] px-1 py-0.2 rounded font-mono uppercase font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30 shrink-0">
+                <span className="text-[8px] px-1.5 py-0.5 rounded font-mono uppercase font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30 shrink-0">
                   Inferred
                 </span>
               )}
 
               {technology.dependentTechnologies && technology.dependentTechnologies.length > 0 && (
-                <span className="text-[8px] px-1 py-0.2 rounded font-mono font-medium bg-zinc-800/80 text-violet-300 border border-violet-500/20 shrink-0">
+                <span className="text-[8px] px-1.5 py-0.5 rounded font-mono font-medium bg-white/[0.04] text-violet-300 border border-violet-500/20 shrink-0">
                   Powers {technology.dependentTechnologies.join(', ')}
                 </span>
               )}
             </div>
 
-            <p className="text-[10px] text-zinc-400 truncate mt-0.5 max-w-[210px]">
+            <p className="text-[10px] text-zinc-400 mt-0.5 leading-relaxed line-clamp-2">
               {technology.description}
             </p>
           </div>
         </div>
 
-        {/* Confidence Tier Badge & Chevron Toggle */}
-        <div className="flex items-center gap-1.5 shrink-0 ml-1">
+        {/* Right Column: Pinned Confidence Badge & Chevron Toggle */}
+        <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
           {technology.isInferred ? (
-            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-violet-500/15 text-violet-300 border-violet-500/30">
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded border bg-violet-500/15 text-violet-300 border-violet-500/30 whitespace-nowrap">
               {technology.confidenceScore}% INFERRED
             </span>
           ) : (
             <span
-              className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${tierBadgeStyle}`}
+              className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border whitespace-nowrap ${tierBadgeStyle}`}
             >
               {technology.confidenceScore}% {technology.confidenceTier.toUpperCase()}
             </span>
           )}
 
           <ChevronDown
-            className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${
-              isExpanded ? 'rotate-180 text-zinc-300' : 'group-hover:text-zinc-400'
+            className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${
+              isExpanded ? 'rotate-180 text-zinc-200' : 'group-hover:text-zinc-300'
             }`}
           />
         </div>

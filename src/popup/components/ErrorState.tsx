@@ -14,12 +14,12 @@ export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry }) => {
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none">
       <div
-        className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-3 border ${
+        className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3.5 border ${
           isRestricted
-            ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+            ? 'bg-amber-500/10 border-amber-500/25 text-amber-400'
             : isUnavailable
-            ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-            : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+            ? 'bg-amber-500/10 border-amber-500/25 text-amber-400'
+            : 'bg-rose-500/10 border-rose-500/25 text-rose-400'
         }`}
       >
         {isRestricted ? (
@@ -31,18 +31,20 @@ export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry }) => {
         )}
       </div>
 
-      <h3 className="text-xs font-bold text-white mb-1">
-        {isRestricted ? 'Restricted Page' : isUnavailable ? 'Page Unavailable' : 'Scan Failed'}
+      <h3 className="text-xs font-bold text-white mb-1.5">
+        {isRestricted ? 'Page Not Supported' : isUnavailable ? 'Page Unavailable' : 'Scan Failed'}
       </h3>
 
-      <p className="text-[11px] text-zinc-400 max-w-[250px] leading-relaxed mb-4">
-        {error.message}
+      <p className="text-[11px] text-zinc-400 max-w-[260px] leading-relaxed mb-4">
+        {isRestricted
+          ? 'SiteStack can inspect regular websites, not browser-internal pages.'
+          : error.message}
       </p>
 
       {!isRestricted && (
         <button
           onClick={onRetry}
-          className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-all shadow-md shadow-indigo-600/30 flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-all shadow-md shadow-indigo-600/25 active:scale-95 flex items-center gap-1.5"
         >
           <RefreshCw className="w-3 h-3" />
           <span>Retry Inspection</span>
@@ -50,8 +52,8 @@ export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry }) => {
       )}
 
       {isRestricted && (
-        <div className="p-2 rounded bg-zinc-900 border border-zinc-800 text-[10px] text-zinc-400 font-mono">
-          Navigate to any standard website (HTTP/HTTPS) and open SiteStack.
+        <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.06] text-[10px] text-zinc-400 font-mono max-w-[270px]">
+          Navigate to any regular website (HTTP/HTTPS) and open SiteStack.
         </div>
       )}
     </div>

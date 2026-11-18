@@ -191,4 +191,77 @@ describe('Phase 9.7.3: useScanner Hook Lifecycle & Late-Response Guard Suite', (
     expect(hookResult?.result?.id).toBe('scan_2');
     cleanup();
   });
+
+  it('4. Tab on brave://extensions classifies as RESTRICTED_URL, never claims TAB_NOT_FOUND, and dispatches zero scan messages', async () => {
+    let hookResult: ReturnType<typeof useScanner> | undefined;
+
+    const TestComponent = () => {
+      hookResult = useScanner();
+      return (
+        <div>
+          <span data-testid="error-code">{hookResult.error?.code || 'none'}</span>
+          <span data-testid="error-msg">{hookResult.error?.message || 'none'}</span>
+        </div>
+      );
+    };
+
+    // Tab is on brave://extensions
+    mockTabsQuery.mockResolvedValue([{ id: 102, url: 'brave://extensions/' }]);
+
+    await act(async () => {
+      root.render(<TestComponent />);
+    });
+
+    expect(hookResult?.error).toBeDefined();
+    expect(hookResult?.error?.code).toBe('RESTRICTED_URL');
+    expect(hookResult?.error?.code).not.toBe('TAB_NOT_FOUND');
+    expect(hookResult?.error?.message).toContain('SiteStack inspects regular websites');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  it('5. Tab on chrome://extensions with browser-redacted URL classifies as RESTRICTED_URL instead of TAB_NOT_FOUND', async () => {
+    let hookResult: ReturnType<typeof useScanner> | undefined;
+
+    const TestComponent = () => {
+      hookResult = useScanner();
+      return <div>Test</div>;
+    };
+
+    // Browser returned valid tab ID but omitted url due to activeTab policy restriction
+    mockTabsQuery.mockResolvedValue([{ id: 103, url: undefined, pendingUrl: undefined }]);
+
+    await act(async () => {
+      root.render(<TestComponent />);
+    });
+
+    expect(hookResult?.error).toBeDefined();
+    expect(hookResult?.error?.code).toBe('RESTRICTED_URL');
+    expect(hookResult?.error?.code).not.toBe('TAB_NOT_FOUND');
+    expect(hookResult?.error?.message).toContain('SiteStack inspects regular websites');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    cleanup();
+  });
+
+  it('6. Genuinely absent tab (empty query array) accurately reports TAB_NOT_FOUND', async () => {
+    let hookResult: ReturnType<typeof useScanner> | undefined;
+
+    const TestComponent = () => {
+      hookResult = useScanner();
+      return <div>Test</div>;
+    };
+
+    // No tab returned at all
+    mockTabsQuery.mockResolvedValue([]);
+
+    await act(async () => {
+      root.render(<TestComponent />);
+    });
+
+    expect(hookResult?.error).toBeDefined();
+    expect(hookResult?.error?.code).toBe('TAB_NOT_FOUND');
+    expect(hookResult?.error?.message).toBe('No active browser tab found to inspect.');
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    cleanup();
+  });
 });
