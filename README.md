@@ -240,7 +240,8 @@ Read our complete privacy policy in [docs/PRIVACY.md](docs/PRIVACY.md).
 - **Current Version:** `1.1.0`
 - **Release Commit:** `60378dec11a92b0f50c6223cd112950a060f5d7d`
 - **Git Tag:** `v1.1.0`
-- **Distribution Package:** [Download sitestack-v1.1.0-stable.zip](https://github.com/Dushyant91/sitestack/releases/download/v1.1.0/sitestack-v1.1.0-stable.zip) ([All Releases](https://github.com/Dushyant91/sitestack/releases))
+- **Distribution Package:** [Download sitestack-v1.1.0-stable.zip](https://github.com/Dushyant91/sitestack/releases/download/v1.1.0/sitestack-v1.1.0-stable.zip)
+- **All Releases:** [GitHub Releases](https://github.com/Dushyant91/sitestack/releases)
 - **SHA-256 Checksum:** `C81887146F96C9DFB5D8C2950698DAB775D8CAD1248046DEB0E7E74973B038CD`
 - **Changelog:** See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
