@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-11-21
+
+### Changed
+- **Extension Brand Identity:** Updated the extension display name to `"SiteStack – Discover Website Technologies"` and set the toolbar action title to `"SiteStack"`.
+- **Surface Branding Consistency:** Aligned the popup document title and user-facing surfaces with the unified SiteStack product brand and descriptive tagline while preserving all detection logic, local privacy guarantees, and permissions.
+
+---
+
 ## [1.1.0] - 2026-11-18
 
 ### Added

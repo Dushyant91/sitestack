@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "SiteStack — Technology Stack Profiler",
-  "version": "1.1.0",
+  "name": "SiteStack – Discover Website Technologies",
+  "version": "1.1.1",
   "description": "Know what's powering any website. High-precision technology intelligence Chrome extension.",
   "permissions": [
     "activeTab",
