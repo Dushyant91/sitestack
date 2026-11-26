@@ -53,7 +53,10 @@ export function renderDemoWidgetHtml(): string {
           Experience SiteStack in Action
         </h2>
         <p class="mt-3 text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed">
-          Select a sample website below to see how SiteStack deconstructs multi-signal runtime evidence, establishes detection confidence, and maps architectural dependency graphs.
+          Select a sample website below to see how SiteStack deconstructs multi-signal runtime evidence, calculates heuristic detection confidence, and maps architectural dependency graphs.
+        </p>
+        <p class="mt-2 text-xs font-mono text-slate-500 dark:text-slate-400">
+          Note: This interactive preview uses curated local sample datasets. It does not scan external websites or execute live browser extension probes.
         </p>
       </div>
 

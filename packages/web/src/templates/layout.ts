@@ -271,9 +271,10 @@ export function renderLayout(options: LayoutOptions): string {
           <h3 class="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-200 mb-3">Resources</h3>
           <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-400">
             <li><a href="/docs" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">Detection Methodology</a></li>
+            <li><a href="/docs#scoring" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">Confidence Calibration</a></li>
             <li><a href="/docs#privacy" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">Privacy Architecture</a></li>
             <li><a href="/docs#faq" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">Frequently Asked Questions</a></li>
-            <li><a href="/docs#api-spec" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">API Specification Preview</a></li>
+            <li><a href="https://github.com/Dushyant91/sitestack/issues" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition flex items-center gap-1">Feedback &amp; Issues &rarr;</a></li>
           </ul>
         </div>
 
