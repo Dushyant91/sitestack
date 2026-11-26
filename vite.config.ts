@@ -16,6 +16,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: path.resolve(__dirname, 'popup/index.html'),
+        canvas: path.resolve(__dirname, 'canvas.html'),
         'service-worker': path.resolve(__dirname, 'src/extension/background/service-worker.ts'),
         'isolated-probe': path.resolve(__dirname, 'src/extension/content/isolated-probe.ts'),
         'main-probe': path.resolve(__dirname, 'src/extension/content/main-probe.ts'),

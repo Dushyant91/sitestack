@@ -12,7 +12,6 @@ import { EmptyState } from './components/EmptyState';
 import { ErrorState } from './components/ErrorState';
 import { FooterActions } from './components/FooterActions';
 import { HistoryModal } from './components/HistoryModal';
-import { CollectionsModal } from './components/CollectionsModal';
 import { ArchitectureFlowView } from './components/architecture';
 import { buildArchitectureGraph } from '../engine/architecture/graph';
 import { ScanResult } from '../engine/types';
@@ -57,7 +56,6 @@ export const App: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
-  const [isCollectionsOpen, setIsCollectionsOpen] = useState<boolean>(false);
   const [historyOverrideScan, setHistoryOverrideScan] = useState<ScanResult | null>(null);
 
   // Active scan to display (either live result or user selected history item)
@@ -194,7 +192,6 @@ export const App: React.FC = () => {
         onExitHistoryMode={() => setHistoryOverrideScan(null)}
         onRescan={handleRescan}
         onOpenHistory={() => setIsHistoryOpen(true)}
-        onOpenCollections={() => setIsCollectionsOpen(true)}
       />
 
       {/* Historical Report Banner */}
@@ -374,18 +371,6 @@ export const App: React.FC = () => {
           onClose={() => setIsHistoryOpen(false)}
           onSelectScan={handleSelectHistoryScan}
           onHistoryModified={handleHistoryModified}
-        />
-      )}
-
-      {/* Research Collections Slide-over Drawer */}
-      {isCollectionsOpen && (
-        <CollectionsModal
-          onClose={() => setIsCollectionsOpen(false)}
-          currentScan={activeScan}
-          onSelectScan={(scan) => {
-            setHistoryOverrideScan(scan as ScanResult);
-            setIsCollectionsOpen(false);
-          }}
         />
       )}
     </div>

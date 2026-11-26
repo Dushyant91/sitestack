@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SiteStack – Architecture Canvas</title>
+
+  <!-- Theme Hydration: Zero-Flash Canvas Night Mode Script -->
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('sitestack_canvas_theme');
+        var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        if (savedTheme === 'light' || (!savedTheme && prefersLight)) {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        } else {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- SiteStack Official Brand Mark Favicon from public/icons/icon-32.png -->
+  <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAQPSURBVFhHtZddTFtlHMYxU9PSQgstLYPCoLRwKB+lMFoYa1nlYynblCmbc3M1mRrDnIqOJXNKppMWSnGiMBhOFjWLZoF4scRE7kg0LmpmRLnw48I4b+RuTnSdF33M/93O29OzEaEf/+SXBsh5fs857+nLORkZqwwABQANAH2SaKLRqFKev+pMzsyZuw+8MNHcfnBeaNx91WzvQjJQhtO7f4Ey+wZCbgAb5E42AO7zP3PCb7XvXNaYtiAdFAkdN3bsOXKCrq5cfs+eJ/qfzrd6oTE1c2qaHkbvi4MYOv1eQtCxjdv2xWXmlXrge6R3JO5KnAxP2cpqfMvZhU0gDGYPps/PYmXlH0aiQ8de/+tvfH1lCUWV7SybMAltN/peDrn52Xf1HJ7OLnRB5OInnyESuSnPS2q+X/qZ5xOtXf45WvYMukMbWvcuZBc4QWz27GWtxTkVmsGz/WH+mej8eX0F+w8dYw6ixtW9FI1Gs6hArqXWd038w/GTpxG5+S8/sHP386jb+jj/TGaG3jzHC5RWd9Kv9LQE+pKqDmRtbGQER9+VH5eyoWzRQ85YAVs7svI3M9Je4LaHnJICbcjKb2AER6cRGvsQuSUdKYUyKVv0kJMX2FT5ANTGekYwnMYC4WnuIaekgBdqo4MRDJ9NY4Gz3EPOWAFhG9SGOoa0gKvtEH77/Q/ZSq596Nhd+/rjC9z2kFNSoBVqg50RDE/xAkdfeVueue6h/SNWYIp7yMkLFAseqAy1jICkAEFnkAwbK3bwApQtesgpKeCGylDNCIQn03YPULboIWesQMVWqPKqGIGRM3EFaPuln9cC3TNycVyBkTPcQ05JgRao8mwMaYH13gP0D0wUlh+9ANupT+9S4JaHnLxAUfkWZOorGYGRCV6AzuiLy9+tmY9m57mw7twiGi5elRWY4B5ySgo0I1MvMKQFUkmswC0POSUFmpCpq2AEQuPpKxAa5x5y/m+BVG9EqxYwWV1Q5pYzBiUF1nsT3m2kGxFlix5ysgLRaFRXVOaKKHOsIAZeH8Vbkx/zSyffWNaLdCMaHH6HOQiTxckLqGwO7xVljgXE9l0H8PmX396xhsly/sIlPPfSAHMQJULLMgAtLcEGr+/R9xXaMoh89c0iewSThyQKPcr99MuvMG5ycEd9i2+evx88dbjvIV1BNRRaM6Oi1oPFH37E1Mwc3+UShZaT5E73Tp6vNVaiu+fJI/RELj6a39va2TOm1lmg0JQytEYB/cffwODQWFK8+loIxmI7z1Vqzahv3n7pjrej8fEPdC5312yOUYBCU5IWsvOssDvbFoaHx4rj5OIAuP8xf6+/yuG5XGxpuFZQ6kAqKDQ7IpT5YPfBY2t6UwaQSe8L9DVJBfRVp0y+5pL5D1FW797Ejmr0AAAAAElFTkSuQmCC">
+  <link rel="shortcut icon" href="/icons/icon-32.png">
+</head>
+<body class="bg-slate-50 dark:bg-[#07090e] text-slate-900 dark:text-zinc-100 antialiased overflow-hidden m-0 p-0 h-screen w-screen transition-colors duration-200">
+  <div id="root" class="h-full w-full"></div>
+  <script type="module" src="/src/canvas/main.tsx"></script>
+</body>
+</html>

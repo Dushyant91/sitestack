@@ -15,7 +15,8 @@ export type ScanErrorCode =
   | 'PAGE_UNAVAILABLE'
   | 'TAB_NOT_FOUND'
   | 'INJECTION_FAILED'
-  | 'EVALUATION_ERROR';
+  | 'EVALUATION_ERROR'
+  | 'BOT_CHALLENGE';
 
 export interface ScanError {
   code: ScanErrorCode;

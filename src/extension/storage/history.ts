@@ -4,6 +4,7 @@ import {
   sanitizeResourceUrl,
   sanitizeResourceEvidenceString,
 } from '../../shared/url';
+import { ScanSnapshot } from '../../../packages/contracts/src/types';
 
 export { normalizeScanUrl, sanitizeResourceUrl, sanitizeResourceEvidenceString };
 
@@ -11,6 +12,41 @@ export const STORAGE_KEY_HISTORY = 'sitestack_history';
 export const STORAGE_KEY_TAB_SCANS = 'sitestack_tab_scans';
 export const MAX_HISTORY_ITEMS = 50;
 export const RESCAN_DUPLICATE_THRESHOLD_MS = 60000; // 60 seconds debounce window for duplicate rescans
+
+/**
+ * Converts a canonical ScanSnapshot into a backward-compatible ScanResult for storage & popup
+ */
+export function snapshotToStoredRecord(snapshot: ScanSnapshot): ScanResult {
+  const url = snapshot.target?.canonicalUrl || (snapshot.target?.domain ? `https://${snapshot.target.domain}` : 'unknown');
+  const domain = snapshot.target?.domain || 'unknown';
+  const timing = snapshot.timing || { engineDurationMs: 0 };
+  const scanDurationMs = typeof timing.totalDurationMs === 'number'
+    ? timing.totalDurationMs
+    : timing.engineDurationMs;
+
+  const technologies = (snapshot.technologies || []).map((t) => ({
+    ...t,
+    isInferred: Boolean(t.detectionType === 'inferred'),
+    confidenceReason:
+      t.confidenceReason || `${t.confidenceTier.toUpperCase()} confidence based on observed signals.`,
+    evidence: (t.evidence || []).map((ev) => ({
+      ...ev,
+      source: sanitizeResourceEvidenceString(ev.source),
+      matchedValue: ev.matchedValue ? sanitizeResourceUrl(ev.matchedValue) : undefined,
+    })),
+  }));
+
+  return {
+    id: snapshot.id,
+    url,
+    domain,
+    timestamp: snapshot.timestamp,
+    stats: snapshot.stats,
+    scanDurationMs,
+    engineEvaluationDurationMs: timing.engineDurationMs,
+    technologies: technologies as any,
+  };
+}
 
 /**
  * Normalizes URL or domain string to a clean lowercased domain key
