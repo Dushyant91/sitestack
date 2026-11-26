@@ -13,6 +13,7 @@ import {
   renderTechnologyDetailPage,
   renderCategoriesPage,
   renderDocsPage,
+  renderNotFoundPage,
   generateSitemapXml,
   generateRobotsTxt,
 } from './index';
@@ -71,6 +72,23 @@ export function buildStaticWebsite(targetDir?: string): BuildSummary {
   // 6. Generate Sitemap & Robots
   fs.writeFileSync(path.join(outputDir, 'sitemap.xml'), generateSitemapXml(), 'utf-8');
   fs.writeFileSync(path.join(outputDir, 'robots.txt'), generateRobotsTxt(), 'utf-8');
+
+  // 7. Render 404 Error Page (Cloudflare Pages fallback)
+  fs.writeFileSync(path.join(outputDir, '404.html'), renderNotFoundPage(), 'utf-8');
+
+  // 8. Generate Cloudflare Pages _headers (Security & Asset Caching)
+  const headersContent = `/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/icons/*
+  Cache-Control: public, max-age=86400
+`;
+  fs.writeFileSync(path.join(outputDir, '_headers'), headersContent, 'utf-8');
 
   // 7. Copy Original Canonical Brand Icons
   const publicIconsDir = path.resolve(rootDir, 'public', 'icons');

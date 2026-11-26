@@ -42,7 +42,7 @@ export function renderLayout(options: LayoutOptions): string {
     extraScripts = '',
   } = options;
 
-  const siteUrl = 'https://sitestack.dev';
+  const siteUrl = process.env.SITE_URL || (process.env.CF_PAGES_URL ? process.env.CF_PAGES_URL.replace(/\/$/, '') : 'https://sitestack.dev');
   const canonicalUrl = `${siteUrl}${currentPath === '/' ? '' : currentPath}`;
   const fullTitle = currentPath === '/' ? title : `${title} — SiteStack`;
 

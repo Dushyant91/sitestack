@@ -7,7 +7,7 @@ import { CatalogService } from './catalog-service';
 export function generateSitemapXml(): string {
   const service = new CatalogService();
   const technologies = service.getAllTechnologies();
-  const baseUrl = 'https://sitestack.dev';
+  const baseUrl = process.env.SITE_URL || (process.env.CF_PAGES_URL ? process.env.CF_PAGES_URL.replace(/\/$/, '') : 'https://sitestack.dev');
   const lastmod = new Date().toISOString().split('T')[0];
 
   const staticRoutes = [
@@ -39,10 +39,11 @@ ${urlElements}
 }
 
 export function generateRobotsTxt(): string {
+  const baseUrl = process.env.SITE_URL || (process.env.CF_PAGES_URL ? process.env.CF_PAGES_URL.replace(/\/$/, '') : 'https://sitestack.dev');
   return `# SiteStack Public Web Platform — Crawling Rules
 User-agent: *
 Allow: /
 
-Sitemap: https://sitestack.dev/sitemap.xml
+Sitemap: ${baseUrl}/sitemap.xml
 `;
 }
