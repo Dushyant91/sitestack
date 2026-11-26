@@ -114,7 +114,7 @@ export function renderLayout(options: LayoutOptions): string {
   </script>
 
   <!-- Local Bundled Stylesheet (No runtime CDN) -->
-  <link rel="stylesheet" href="/assets/style.css">
+  <link rel="stylesheet" href="/assets/style.css?v=1.1.2">
 
   <!-- SiteStack Official Brand Mark Favicon from public/icons/icon-32.png -->
   <link rel="icon" type="image/png" sizes="32x32" href="${SITESTACK_ICON_32_DATA_URI}">

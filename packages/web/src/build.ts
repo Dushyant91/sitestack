@@ -83,7 +83,7 @@ export function buildStaticWebsite(targetDir?: string): BuildSummary {
   Referrer-Policy: strict-origin-when-cross-origin
 
 /assets/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=0, must-revalidate
 
 /icons/*
   Cache-Control: public, max-age=86400
