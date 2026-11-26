@@ -5,6 +5,7 @@
 import { CatalogService } from '../catalog-service';
 import { renderLayout, escapeHtml } from '../templates/layout';
 import { renderDemoWidgetHtml, renderDemoScript } from '../demo/demo-widget';
+import { CHROME_WEB_STORE_URL } from '../constants';
 
 export function renderLandingPage(): string {
   const catalog = new CatalogService();
@@ -44,7 +45,7 @@ export function renderLandingPage(): string {
       </p>
 
       <div class="mt-10 flex flex-wrap justify-center items-center gap-3 sm:gap-4">
-        <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer" class="px-6 sm:px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all transform active:scale-95 inline-flex items-center justify-center gap-2 text-sm sm:text-base shrink-0">
+        <a href="${CHROME_WEB_STORE_URL}" target="_blank" rel="noopener noreferrer" class="px-6 sm:px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all transform active:scale-95 inline-flex items-center justify-center gap-2 text-sm sm:text-base shrink-0">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
             <circle cx="12" cy="12" r="4"/>
@@ -177,7 +178,7 @@ export function renderLandingPage(): string {
       </p>
 
       <div class="mt-8 flex flex-wrap justify-center items-center gap-4">
-        <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer" class="px-8 py-4 bg-white hover:bg-slate-100 text-indigo-900 font-extrabold rounded-xl shadow-xl transition-all transform active:scale-95 text-base flex items-center gap-2">
+        <a href="${CHROME_WEB_STORE_URL}" target="_blank" rel="noopener noreferrer" class="px-8 py-4 bg-white hover:bg-slate-100 text-indigo-900 font-extrabold rounded-xl shadow-xl transition-all transform active:scale-95 text-base flex items-center gap-2">
           <svg class="w-5 h-5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
             <circle cx="12" cy="12" r="4"/>

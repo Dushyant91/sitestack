@@ -11,6 +11,8 @@ import {
   renderDocsPage,
   generateSitemapXml,
   generateRobotsTxt,
+  CHROME_WEB_STORE_EXTENSION_ID,
+  CHROME_WEB_STORE_URL,
 } from '../../packages/web/src';
 import { buildStaticWebsite } from '../../packages/web/src/build';
 
@@ -221,6 +223,31 @@ describe('SiteStack Stage 4.3: Public Web Platform & Catalog Suite', () => {
       } finally {
         fs.rmSync(tempDir, { recursive: true, force: true });
       }
+    });
+  });
+
+  // =========================================================================
+  // 5. CHROME WEB STORE CTA INTEGRATION
+  // =========================================================================
+  describe('5. Chrome Web Store CTA & Extension Listing Integrity', () => {
+    it('5.1. exports canonical Chrome Web Store extension ID and listing URL', () => {
+      expect(CHROME_WEB_STORE_EXTENSION_ID).toBe('ldbjgbplogpoejlbcmkmpbfmbnaphfla');
+      expect(CHROME_WEB_STORE_URL).toContain('ldbjgbplogpoejlbcmkmpbfmbnaphfla');
+      expect(CHROME_WEB_STORE_URL).toContain('sitestack');
+    });
+
+    it('5.2. embeds canonical store listing URL across landing page, header, mobile nav, demo, and footer', () => {
+      const landingHtml = renderLandingPage();
+      expect(landingHtml).toContain(CHROME_WEB_STORE_URL);
+
+      // Verify no generic webstore links without the extension ID exist
+      const genericWebstoreLinks = (landingHtml.match(/href="https:\/\/chrome\.google\.com\/webstore"/g) || []).length;
+      expect(genericWebstoreLinks).toBe(0);
+
+      // Verify all occurrences use the canonical URL
+      const canonicalOccurrences = (landingHtml.match(new RegExp(CHROME_WEB_STORE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+      // Landing page contains: desktop header, mobile header, hero CTA, demo CTA, bottom banner CTA, and footer link (6 total)
+      expect(canonicalOccurrences).toBe(6);
     });
   });
 });

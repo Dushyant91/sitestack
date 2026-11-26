@@ -2,6 +2,7 @@
  * SiteStack Expansion v1 — Public Web Platform
  */
 
+export * from './constants';
 export * from './catalog-service';
 export * from './templates/layout';
 export * from './pages/landing';

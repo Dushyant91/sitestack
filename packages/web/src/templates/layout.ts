@@ -11,6 +11,7 @@ import {
   SITESTACK_ICON_32_DATA_URI,
   SITESTACK_ICON_16_DATA_URI,
 } from '../../../../src/shared/logo-assets';
+import { CHROME_WEB_STORE_URL } from '../constants';
 
 export interface LayoutOptions {
   title: string;
@@ -173,7 +174,7 @@ export function renderLayout(options: LayoutOptions): string {
           </svg>
         </button>
 
-        <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all active:scale-95 whitespace-nowrap">
+        <a href="${CHROME_WEB_STORE_URL}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all active:scale-95 whitespace-nowrap">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
             <circle cx="12" cy="12" r="4"/>
@@ -214,7 +215,7 @@ export function renderLayout(options: LayoutOptions): string {
     <div id="mobile-menu" class="hidden lg:hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-2 pb-4 space-y-1 transition-colors duration-200">
       ${mobileNavHtml}
       <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
-        <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer" class="block w-full text-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm">
+        <a href="${CHROME_WEB_STORE_URL}" target="_blank" rel="noopener noreferrer" class="block w-full text-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg shadow-sm">
           Add to Chrome Extension
         </a>
       </div>
@@ -261,7 +262,7 @@ export function renderLayout(options: LayoutOptions): string {
             <li><a href="/catalog" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">80-Technology Catalog</a></li>
             <li><a href="/categories" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">8 Functional Categories</a></li>
             <li><a href="/categories#ontology" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">41 Architectural Relationships</a></li>
-            <li><a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">Chrome Web Store Listing</a></li>
+            <li><a href="${CHROME_WEB_STORE_URL}" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition">Chrome Web Store Listing</a></li>
           </ul>
         </div>
 

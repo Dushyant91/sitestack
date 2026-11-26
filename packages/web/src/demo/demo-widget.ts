@@ -15,6 +15,7 @@ import { DEMO_ARCHETYPES } from './demo-data';
 import { renderDemoGraphSvg } from './demo-graph-svg';
 import { escapeHtml } from '../templates/layout';
 import { SITESTACK_ICON_128_DATA_URI } from '../../../../src/shared/logo-assets';
+import { CHROME_WEB_STORE_URL } from '../constants';
 
 export function renderDemoWidgetHtml(): string {
   const initialArchetype = DEMO_ARCHETYPES[0];
@@ -284,7 +285,7 @@ export function renderDemoWidgetHtml(): string {
           </div>
 
           <a
-            href="https://chrome.google.com/webstore"
+            href="${CHROME_WEB_STORE_URL}"
             target="_blank"
             rel="noopener noreferrer"
             class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 text-xs sm:text-sm transition-all transform active:scale-95 shrink-0"
