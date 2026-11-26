@@ -191,7 +191,7 @@ export function renderDocsPage(): string {
           </div>
 
           <div class="p-3 bg-slate-100/70 dark:bg-slate-900/40 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-            <strong>Noise Floor (&lt; 30%):</strong> Candidate detections scoring below 30% are suppressed entirely to guarantee zero noise and eliminate false positives.
+            <strong>Noise Floor (&lt; 30%):</strong> Candidate detections scoring below 30% are suppressed to filter low-confidence noise and reduce false positives.
           </div>
         </div>
       </article>
@@ -290,7 +290,7 @@ console.log('Discovered ' + graph.nodes.length + ' nodes across ' + graph.cluste
           <div class="p-5 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800">
             <h3 class="font-extrabold text-slate-900 dark:text-white text-sm mb-1.5">How does SiteStack differ from Wappalyzer or BuiltWith?</h3>
             <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              SiteStack evaluates websites locally inside your browser, enabling 100% accurate SPA inspection with zero telemetry. Other services either rely on remote HTML scraping (which misses dynamic SPAs) or track your navigation history for commercial data resale.
+              SiteStack evaluates websites locally inside your browser, enabling direct client-side SPA inspection with zero telemetry. Other services either rely on remote HTML scraping (which misses dynamic SPAs) or track your navigation history for commercial data resale.
             </p>
           </div>
 

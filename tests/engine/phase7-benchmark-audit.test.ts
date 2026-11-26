@@ -5,11 +5,10 @@ import { ALL_RULES } from '../../src/engine/rules/registry';
 import { CANONICAL_TECHNOLOGY_DEFINITIONS } from '../../src/engine/schema/definitions';
 
 /**
- * Phase 7 & Stage 2.6.4: Expanded Real-World Benchmark & False-Positive Audit
- * 113 Total Website Benchmark Scenarios:
- * - 84 Positive Benchmark Cases across 10 categories (CMS, Ecommerce, Frameworks, Libraries, Analytics, Marketing, Payments, Infrastructure, Batch 1 Additions, Batch 2 Additions)
- * - 29 Negative-Control Benchmark Cases targeting known false-positive and separation risks
- * - 1 Dataset Integrity & Statistical Reliability Assertion (114 total test blocks)
+ * Phase 7 & Stage 2.6.4: Real-World Regression Benchmark & Separation Audit
+ * Regression test set covering multi-architecture framework coexistence,
+ * separation risks, and negative-control scenarios.
+ * Results describe this test suite only and do not guarantee universal accuracy.
  */
 
 describe('Phase 7: Expanded Real-World Benchmark & False-Positive Audit Suite', () => {
@@ -2943,7 +2942,7 @@ describe('Phase 7: Expanded Real-World Benchmark & False-Positive Audit Suite', 
   // =========================================================================
 
   describe('Stage 4: Programmatic Benchmark Metrics Verification', () => {
-    it('Should verify 100% benchmark dataset integrity and compute macro-metrics', () => {
+    it('Should verify catalog coverage across benchmark audit suite and definition integrity', () => {
       // Confirm all 60 rules in catalog are tested
       const testedRuleIds = new Set([
         'wordpress', 'webflow', 'wix',
@@ -2981,7 +2980,7 @@ describe('Phase 7: Expanded Real-World Benchmark & False-Positive Audit Suite', 
       expect(testedRuleIds.size).toBe(80);
     });
 
-    it('Should programmatically execute multi-architecture benchmark cases and compute macro-metrics', () => {
+    it('Should execute benchmark scenarios, verify assertion set, and report scoped metrics with explicit denominators', () => {
       // Benchmark cases representing diverse real-world architectures and negative controls
       const benchmarkCases: Array<{
         name: string;
@@ -3196,19 +3195,27 @@ describe('Phase 7: Expanded Real-World Benchmark & False-Positive Audit Suite', 
 
       console.log(`
 ========================================================================================
-SITESTACK PROGRAMMATIC BENCHMARK & ACCURACY AUDIT EXECUTION
-Workstream C - Real-World Coverage & Robustness Verification
+SITESTACK PROGRAMMATIC BENCHMARK ASSERTION EXECUTION
+Workstream C - Regression Benchmark Set Verification
 ========================================================================================
-  Evaluated Scenarios         : ${benchmarkCases.length}
-  True Positives (TP)         : ${truePositives}
-  True Negatives (TN)         : ${trueNegatives}
-  False Positives (FP)        : ${falsePositives}
-  False Negatives (FN)        : ${falseNegatives}
+  Evaluated Website Scenarios             : ${benchmarkCases.length}
+  Individual Detection Assertions (TP)    : ${truePositives} of ${truePositives + falseNegatives} (FN: ${falseNegatives})
+  Explicit Absence Assertions (TN)        : ${trueNegatives} of ${trueNegatives + falsePositives} (FP: ${falsePositives})
+  Version Extraction Assertions           : ${correctVersionChecks} of ${totalVersionChecks}
 ----------------------------------------------------------------------------------------
-  Precision                   : ${(precision * 100).toFixed(2)}% (${precision.toFixed(4)})
-  Recall                      : ${(recall * 100).toFixed(2)}% (${recall.toFixed(4)})
-  Macro F1 Score              : ${(f1 * 100).toFixed(2)}% (${f1.toFixed(4)})
-  Version Extraction Accuracy : ${(versionAccuracy * 100).toFixed(2)}% (${versionAccuracy.toFixed(4)})
+  Precision [TP / (TP + FP)]              : ${(precision * 100).toFixed(2)}% (${truePositives}/${truePositives + falsePositives})
+  Recall    [TP / (TP + FN)]              : ${(recall * 100).toFixed(2)}% (${truePositives}/${truePositives + falseNegatives})
+  F1 Score  [2 * (P * R) / (P + R)]       : ${(f1 * 100).toFixed(2)}% (${f1.toFixed(4)})
+  Version Accuracy [Correct / Checked]    : ${(versionAccuracy * 100).toFixed(2)}% (${correctVersionChecks}/${totalVersionChecks})
+----------------------------------------------------------------------------------------
+  Benchmark assertion results: SiteStack passed all evaluated detection and absence
+  assertions in the selected benchmark scenarios (${benchmarkCases.length} scenarios, ${truePositives} detection
+  assertions, ${trueNegatives} absence assertions). These results describe this test set only and
+  are not a guarantee of accuracy across all websites or supported technologies.
+
+  Version extraction checks: ${correctVersionChecks} of ${totalVersionChecks} deterministic version assertions passed in this
+  benchmark set. This is a limited regression sample, not a comprehensive version
+  extraction accuracy estimate.
 ========================================================================================
       `);
 
