@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:web:css": "tailwindcss -i packages/web/src/styles/input.css -o dist-web/assets/style.css --minify",
+    "build:web:css": "tailwindcss --config tailwind.config.js -i packages/web/src/styles/input.css -o dist-web/assets/style.css --minify",
     "build:web:html": "vite-node packages/web/src/build.ts",
     "build:web": "npm run build:web:css && npm run build:web:html",
     "test": "vitest run",

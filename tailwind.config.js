@@ -1,9 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./popup/**/*.html",
     "./index.html",
+    "./canvas.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    "./packages/web/**/*.{js,ts,jsx,tsx,html}",
   ],
   theme: {
     extend: {

@@ -43,8 +43,8 @@ export function renderLandingPage(): string {
         SiteStack inspects DOM hierarchy, runtime globals, script assets, and HTTP headers inside your browser. Multi-signal corroboration. No guessing, no tracking.
       </p>
 
-      <div class="mt-10 flex flex-wrap justify-center items-center gap-4">
-        <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer" class="px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all transform active:scale-95 flex items-center gap-2 text-sm sm:text-base">
+      <div class="mt-10 flex flex-wrap justify-center items-center gap-3 sm:gap-4">
+        <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer" class="px-6 sm:px-7 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all transform active:scale-95 inline-flex items-center justify-center gap-2 text-sm sm:text-base shrink-0">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
             <circle cx="12" cy="12" r="4"/>
@@ -54,13 +54,13 @@ export function renderLandingPage(): string {
           </svg>
           Add to Chrome — Free
         </a>
-        <a href="#demo" class="px-7 py-3.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm hover:border-slate-400 dark:hover:border-slate-600 transition-all text-sm sm:text-base flex items-center gap-2">
+        <a href="#demo" class="px-6 sm:px-7 py-3.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm hover:border-slate-400 dark:hover:border-slate-600 transition-all text-sm sm:text-base inline-flex items-center justify-center gap-2 shrink-0">
           <span>Explore Live Demo</span>
           <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </a>
-        <a href="/catalog" class="px-5 py-3.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-semibold text-sm transition-colors">
+        <a href="/catalog" class="px-4 sm:px-5 py-3.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-semibold text-sm transition-colors inline-flex items-center justify-center">
           Browse ${techCount} Technologies &rarr;
         </a>
       </div>
