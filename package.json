@@ -1,12 +1,15 @@
 {
   "name": "sitestack",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Know what's powering any website — High-precision technology intelligence Chrome extension.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:web:css": "tailwindcss -i packages/web/src/styles/input.css -o dist-web/assets/style.css --minify",
+    "build:web:html": "vite-node packages/web/src/build.ts",
+    "build:web": "npm run build:web:css && npm run build:web:html",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:bench": "vitest run tests/engine/benchmark.test.ts"
