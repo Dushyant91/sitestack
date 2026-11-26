@@ -204,11 +204,16 @@ export function renderLandingPage(): string {
   ${renderDemoScript()}
   `;
 
+  const extraHead = `
+  <meta name="google-site-verification" content="h_pXt4YWPMGFCMNaTUXurP0CTFodp0TsijyukfYjaRo" />
+  `;
+
   return renderLayout({
     title: 'SiteStack — Website Technology Intelligence Engine',
     description: 'Discover the exact frameworks, libraries, CMS, analytics, and infrastructure powering any website with multi-signal precision and zero telemetry.',
     currentPath: '/',
     bodyHtml,
     extraScripts,
+    extraHead,
   });
 }

@@ -101,6 +101,7 @@ describe('SiteStack Stage 4.3: Public Web Platform & Catalog Suite', () => {
       expect(html).toContain('demo-archetype-tab');
       expect(html).toContain('demo-download-json-btn');
       expect(html).toContain('demo-download-svg-btn');
+      expect(html).toContain('<meta name="google-site-verification" content="h_pXt4YWPMGFCMNaTUXurP0CTFodp0TsijyukfYjaRo" />');
     });
 
     it('2.2. renders catalog directory page with filter tabs and all 80 cards', () => {
