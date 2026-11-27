@@ -216,6 +216,27 @@ export function evaluateNormalizedEvidence(
       }
     }
 
+    // Apply weak-authoritative protection when explicitly opted in by technology definition policy
+    if (
+      def.scoringPolicy.requireAuthoritativeScopeForHigh &&
+      confidenceScore >= SCORE_HIGH_THRESHOLD
+    ) {
+      const authScope = def.scoringPolicy.authoritativeScope;
+      const minAuthScore = def.scoringPolicy.minAuthoritativeScoreForHigh;
+
+      const directAuthEvidence = matchedEvidence.filter(
+        (e) => e.claimScope === authScope && e.role === 'direct'
+      );
+      const authScore = directAuthEvidence.reduce(
+        (sum, e) => sum + (e.effectiveWeight ?? e.baseWeight),
+        0
+      );
+
+      if (authScore < minAuthScore) {
+        confidenceScore = Math.min(confidenceScore, def.scoringPolicy.weakAuthoritativeCeiling);
+      }
+    }
+
     // If score is below noise floor (30), suppress it
     if (confidenceScore < SCORE_MIN_THRESHOLD) {
       continue;
@@ -260,7 +281,14 @@ export function evaluateNormalizedEvidence(
       confidenceReason = `High confidence (Direct): Corroborated across ${distinctClasses.length} independent signal classes (${distinctClasses.join(', ')}). Reliable proof of active execution.`;
     } else if (confidenceTier === 'medium') {
       const primary = matchedEvidence[0]?.source || 'primary signal';
-      confidenceReason = `Medium confidence (Direct): Verified by ${primary}, but lacks multi-class corroboration to confirm full installation.`;
+      if (
+        def.scoringPolicy.requireAuthoritativeScopeForHigh &&
+        rawScore >= SCORE_HIGH_THRESHOLD
+      ) {
+        confidenceReason = `Medium confidence (Direct): Verified by ${primary}, but capped at ${def.scoringPolicy.weakAuthoritativeCeiling} pts because ${def.scoringPolicy.scopeRestrictionReason}`;
+      } else {
+        confidenceReason = `Medium confidence (Direct): Verified by ${primary}, but lacks multi-class corroboration to confirm full installation.`;
+      }
     } else {
       const primaryEv = matchedEvidence[0];
       const primary = primaryEv?.source || 'standalone asset';

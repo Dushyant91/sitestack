@@ -211,6 +211,7 @@ export interface ClaimScopeScoringPolicy {
   weakAuthoritativeCeiling: number;      // e.g. 69 (Medium tier)
   scopeRestrictionReason: string;
   authoritativeHeaderFingerprintIds?: string[];
+  requireAuthoritativeScopeForHigh?: boolean;
 }
 
 // ---------------------------------------------------------------------------

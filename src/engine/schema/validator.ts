@@ -221,6 +221,12 @@ export function validateTechnologyDefinition(tech: TechnologyDefinition): Valida
       }
     }
 
+    if (sp.requireAuthoritativeScopeForHigh !== undefined) {
+      if (typeof sp.requireAuthoritativeScopeForHigh !== 'boolean') {
+        errors.push(`Technology ${tech.id}: scoringPolicy.requireAuthoritativeScopeForHigh must be a boolean`);
+      }
+    }
+
     // Authoritative Header Fingerprint References
     if (sp.authoritativeHeaderFingerprintIds) {
       if (!Array.isArray(sp.authoritativeHeaderFingerprintIds)) {

@@ -1200,6 +1200,7 @@ export const CANONICAL_TECHNOLOGY_DEFINITIONS: TechnologyDefinition[] = [
       minAuthoritativeScoreForHigh: 60,
       unverifiedScopeCeiling: 49,
       weakAuthoritativeCeiling: 69,
+      requireAuthoritativeScopeForHigh: true,
       scopeRestrictionReason: 'Requires Google Tag Manager runtime global or script.',
     },
     versionPolicy: {
