@@ -150,21 +150,69 @@ export function harvestIsolatedSignals(): IsolatedProbePayload {
       }
     }
 
-    // Check for Tailwind CSS custom property signatures in stylesheets
+    // Check for Tailwind CSS and Vue custom property/directive signatures in stylesheets (inline and accessible styleSheets)
     try {
-      const styleTags = document.querySelectorAll('style');
-      styleTags.forEach((st) => {
-        const text = st.textContent || '';
-        if (text.includes('--tw-')) {
+      let hasTw = false;
+      let hasTwRing = false;
+      let hasTwV4Theme = false;
+      let hasTwV4Tokens = false;
+      let hasVueScoped = false;
+
+      const checkCssText = (text: string) => {
+        if (!text) return;
+        if (!hasTw && text.includes('--tw-')) {
+          hasTw = true;
           dom.push({ selector: 'style:has-text(--tw-)' });
         }
-        if (text.includes('--tw-ring-offset-shadow')) {
+        if (!hasTwRing && text.includes('--tw-ring-offset-shadow')) {
+          hasTwRing = true;
           dom.push({ selector: 'style:has-text(--tw-ring-offset-shadow)' });
         }
-        if (/\[data-v-[a-f0-9]+\]/i.test(text)) {
+        if (!hasTwV4Theme && text.includes('@layer theme')) {
+          hasTwV4Theme = true;
+          dom.push({ selector: 'style:has-text(@layer theme)' });
+        }
+        if (!hasTwV4Tokens && text.includes('--default-font-family')) {
+          hasTwV4Tokens = true;
+          dom.push({ selector: 'style:has-text(--default-font-family)' });
+        }
+        if (!hasVueScoped && /\[data-v-[a-f0-9]+\]/i.test(text)) {
+          hasVueScoped = true;
           dom.push({ selector: 'style:has-text([data-v-])' });
         }
+      };
+
+      // 1. Inspect inline <style> tags
+      const styleTags = document.querySelectorAll('style');
+      styleTags.forEach((st) => {
+        checkCssText(st.textContent || '');
       });
+
+      // 2. Safely inspect accessible document.styleSheets (same-origin linked stylesheets)
+      if (typeof document !== 'undefined' && document.styleSheets) {
+        const maxSheets = Math.min(document.styleSheets.length, 10);
+        for (let i = 0; i < maxSheets; i++) {
+          if (hasTw && hasTwRing && hasTwV4Theme && hasTwV4Tokens && hasVueScoped) {
+            break;
+          }
+          const sheet = document.styleSheets[i];
+          try {
+            const rules = sheet.cssRules;
+            if (rules) {
+              const maxRules = Math.min(rules.length, 30);
+              for (let j = 0; j < maxRules; j++) {
+                const rule = rules[j];
+                if (rule && typeof rule.cssText === 'string') {
+                  checkCssText(rule.cssText);
+                }
+              }
+            }
+          } catch {
+            // Cross-origin CSSStyleSheet.cssRules throws SecurityError (DOMException)
+            // Silently ignore to preserve sandbox security and performance
+          }
+        }
+      }
     } catch {
       // Ignore stylesheet security restrictions
     }

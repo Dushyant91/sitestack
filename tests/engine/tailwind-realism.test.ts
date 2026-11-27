@@ -215,4 +215,115 @@ describe('SiteStack Tailwind CSS Detection Realism Suite', () => {
     const tw = result.technologies.find((t) => t.id === 'tailwindcss');
     expect(tw).toBeUndefined();
   });
+
+  // =========================================================================
+  // 6. Same-Origin External Stylesheet Inspection & Confidence Calibration
+  // =========================================================================
+  it('6. Harvests Tailwind signatures from accessible external stylesheet and achieves 60% Medium single-class saturation', () => {
+    loadFixture('tailwind-production-app.html');
+
+    // Simulate same-origin external stylesheet with compiled Tailwind reset rules
+    const mockStyleSheet = {
+      cssRules: [
+        { cssText: '*,:after,:before{--tw-border-spacing-x:0;--tw-ring-offset-shadow:0 0 #0000;--tw-ring-color:rgba(59,130,246,.5);}' },
+      ],
+    };
+
+    Object.defineProperty(document, 'styleSheets', {
+      value: [mockStyleSheet],
+      configurable: true,
+    });
+
+    const isolated = harvestIsolatedSignals();
+    const selectors = isolated.dom.map((d) => d.selector);
+
+    expect(selectors).toContain('dom:tailwind-utilities');
+    expect(selectors).toContain('style:has-text(--tw-)');
+    expect(selectors).toContain('style:has-text(--tw-ring-offset-shadow)');
+
+    const signals: HarvestedSignals = {
+      url: 'https://cloudpulse-analytics.internal/dashboard',
+      globals: {},
+      dom: isolated.dom,
+      meta: isolated.meta,
+      resources: ['https://cloudpulse-analytics.internal/assets/app.css'],
+    };
+
+    const result = evaluateSignals(signals);
+    const tw = result.technologies.find((t) => t.id === 'tailwindcss');
+
+    expect(tw).toBeDefined();
+    // Primary (55) + Secondary (50 + 45) * 0.4 = 93 -> capped at CLASS_CAPS.dom (60)
+    // Saturated single-class authoritative DOM detection: 60% Medium
+    expect(tw?.confidenceScore).toBe(60);
+    expect(tw?.confidenceTier).toBe('medium');
+    expect(tw?.detectionType).toBe('direct');
+  });
+
+  // =========================================================================
+  // 7. SiteStack Production Website Stylesheet Detection
+  // =========================================================================
+  it('7. Accurately detects Tailwind CSS on SiteStack production build with accessible style.css', () => {
+    // Read the actual compiled CSS from dist-web/assets/style.css
+    const cssPath = path.resolve(__dirname, '../../dist-web/assets/style.css');
+    let firstRuleText = '*,:after,:before{--tw-border-spacing-x:0;--tw-ring-offset-shadow:0 0 #0000;}';
+    if (fs.existsSync(cssPath)) {
+      const fullCss = fs.readFileSync(cssPath, 'utf-8');
+      // Extract the first block
+      const closeBrace = fullCss.indexOf('}');
+      if (closeBrace > 0) {
+        firstRuleText = fullCss.slice(0, closeBrace + 1);
+      }
+    }
+
+    // Set up document with SiteStack categories page structure
+    document.documentElement.innerHTML = `
+      <head>
+        <link rel="stylesheet" href="/assets/style.css?v=1.1.2">
+      </head>
+      <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
+        <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 dark:bg-slate-900/90 dark:border-slate-800">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <span class="text-indigo-600 dark:text-indigo-400 font-bold">SiteStack</span>
+          </div>
+        </header>
+        <main class="max-w-7xl mx-auto px-4 py-12">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="p-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+              <h2 class="text-xl font-bold text-slate-900 dark:text-white">CMS Platforms</h2>
+            </div>
+          </div>
+        </main>
+      </body>
+    `;
+
+    // Mock document.styleSheets for same-origin /assets/style.css
+    Object.defineProperty(document, 'styleSheets', {
+      value: [{ cssRules: [{ cssText: firstRuleText }] }],
+      configurable: true,
+    });
+
+    const isolated = harvestIsolatedSignals();
+    const selectors = isolated.dom.map((d) => d.selector);
+
+    expect(selectors).toContain('dom:tailwind-utilities');
+    expect(selectors).toContain('style:has-text(--tw-)');
+    expect(selectors).toContain('style:has-text(--tw-ring-offset-shadow)');
+
+    const signals: HarvestedSignals = {
+      url: 'https://sitestack.pages.dev/categories/',
+      globals: {},
+      dom: isolated.dom,
+      meta: isolated.meta,
+      resources: ['https://sitestack.pages.dev/assets/style.css?v=1.1.2'],
+    };
+
+    const result = evaluateSignals(signals);
+    const tw = result.technologies.find((t) => t.id === 'tailwindcss');
+
+    expect(tw).toBeDefined();
+    expect(tw?.confidenceScore).toBe(60);
+    expect(tw?.confidenceTier).toBe('medium');
+    expect(tw?.detectionType).toBe('direct');
+  });
 });

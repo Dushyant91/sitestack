@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { validateScannableUrl } from '../../src/shared/messages';
 import { harvestIsolatedSignals } from '../../src/extension/content/isolated-probe';
 import { harvestMainSignals } from '../../src/extension/content/main-probe';
@@ -446,6 +446,108 @@ describe('Manifest V3 Extension Harness & Probes', () => {
       expect(result).toBeDefined();
       expect(result.React).toEqual({ version: '18.2.0' });
       expect(result.__next_f).toEqual({ rscStream: true, chunkCount: 2 });
+    });
+  });
+
+  describe('Probe Stylesheet Inspection & Security Resilience', () => {
+    let originalStyleSheets: PropertyDescriptor | undefined;
+
+    beforeEach(() => {
+      originalStyleSheets = Object.getOwnPropertyDescriptor(Document.prototype, 'styleSheets');
+    });
+
+    afterEach(() => {
+      if (originalStyleSheets) {
+        Object.defineProperty(Document.prototype, 'styleSheets', originalStyleSheets);
+      } else {
+        // @ts-expect-error cleanup
+        delete document.styleSheets;
+      }
+      document.head.innerHTML = '';
+      document.body.innerHTML = '';
+    });
+
+    it('harvests Tailwind signatures from accessible same-origin document.styleSheets', () => {
+      const mockStyleSheet = {
+        cssRules: [
+          { cssText: '*,:after,:before{--tw-border-spacing-x:0;--tw-ring-offset-shadow:0 0 #0000;}' },
+          { cssText: '@layer theme { :root { --default-font-family: Inter; } }' },
+        ],
+      };
+
+      Object.defineProperty(document, 'styleSheets', {
+        value: [mockStyleSheet],
+        configurable: true,
+      });
+
+      const result = harvestIsolatedSignals();
+      const selectors = result.dom.map((d) => d.selector);
+
+      expect(selectors).toContain('style:has-text(--tw-)');
+      expect(selectors).toContain('style:has-text(--tw-ring-offset-shadow)');
+      expect(selectors).toContain('style:has-text(@layer theme)');
+      expect(selectors).toContain('style:has-text(--default-font-family)');
+    });
+
+    it('preserves existing inline <style> tag detection', () => {
+      const style = document.createElement('style');
+      style.textContent = '*,:before{--tw-border-spacing-x:0;--tw-ring-offset-shadow:0 0 #0000;}';
+      document.head.appendChild(style);
+
+      const result = harvestIsolatedSignals();
+      const selectors = result.dom.map((d) => d.selector);
+
+      expect(selectors).toContain('style:has-text(--tw-)');
+      expect(selectors).toContain('style:has-text(--tw-ring-offset-shadow)');
+    });
+
+    it('handles cross-origin SecurityError gracefully without crashing the probe', () => {
+      const restrictedStyleSheet = {
+        get cssRules(): CSSRuleList {
+          throw new DOMException(
+            "Failed to read the 'cssRules' property from 'CSSStyleSheet': Cannot access rules",
+            'SecurityError'
+          );
+        },
+      };
+
+      Object.defineProperty(document, 'styleSheets', {
+        value: [restrictedStyleSheet],
+        configurable: true,
+      });
+
+      // Must not throw and must return valid payload
+      expect(() => {
+        const result = harvestIsolatedSignals();
+        expect(Array.isArray(result.dom)).toBe(true);
+      }).not.toThrow();
+    });
+
+    it('deduplicates signatures across multiple stylesheets without producing duplicate DOM evidence', () => {
+      const sheetA = {
+        cssRules: [{ cssText: '*,:after{--tw-border-spacing-x:0;--tw-ring-offset-shadow:0 0 #0000;}' }],
+      };
+      const sheetB = {
+        cssRules: [{ cssText: '.ring{--tw-ring-offset-shadow:0 0 #0000;--tw-border-spacing-x:0;}' }],
+      };
+
+      // Also add an inline style tag with the same needle
+      const style = document.createElement('style');
+      style.textContent = ':root{--tw-border-spacing-x:0;}';
+      document.head.appendChild(style);
+
+      Object.defineProperty(document, 'styleSheets', {
+        value: [sheetA, sheetB],
+        configurable: true,
+      });
+
+      const result = harvestIsolatedSignals();
+      const twMatches = result.dom.filter((d) => d.selector === 'style:has-text(--tw-)');
+      const twRingMatches = result.dom.filter((d) => d.selector === 'style:has-text(--tw-ring-offset-shadow)');
+
+      // Must be deduplicated to exactly 1 match each
+      expect(twMatches).toHaveLength(1);
+      expect(twRingMatches).toHaveLength(1);
     });
   });
 });
