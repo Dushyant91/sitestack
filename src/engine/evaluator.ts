@@ -9,7 +9,17 @@ import {
 } from './types';
 import { ALL_RULES, getRuleById } from './rules/registry';
 import { getNestedProperty, extractVersion, classifyVersionMaturity } from './version';
-import { sanitizeResourceUrl, normalizeScanUrl } from '../shared/url';
+import { sanitizeResourceUrl } from '../shared/url';
+import {
+  evaluateNormalizedEvidence,
+  compileProbeExecutionPlan,
+  compileLegacyProbeExecutionPlan,
+  CANONICAL_TECHNOLOGY_DEFINITIONS,
+  matchHarvestedSignalsToNormalizedEvidence,
+  ProbeExecutionPlan,
+} from './schema';
+
+export { evaluateNormalizedEvidence };
 
 /**
  * Score thresholds
@@ -364,6 +374,19 @@ export function resolveImpliedTechnologies(
           }
           return true;
         }
+        if (impliedId === 'solidjs' && detected.id === 'solidstart') {
+          return (
+            (ev.type === 'global' && (ev.source.includes('_$HY') || ev.source.includes('SOLID'))) ||
+            (ev.type === 'resource' && ev.source.includes('solid'))
+          );
+        }
+        if (impliedId === 'qwik' && detected.id === 'qwik-city') {
+          return (
+            ev.source.includes('[q:container]') ||
+            ev.source.includes('[q:version]') ||
+            ev.source.includes('/build/q-')
+          );
+        }
         return ev.type !== 'inferred';
       });
 
@@ -426,71 +449,21 @@ export function resolveImpliedTechnologies(
   }
 }
 
+let cachedDefaultProbePlan: ProbeExecutionPlan | undefined;
+
 /**
- * Main evaluation entry point: scans all harvested signals against rule catalog
+ * Main evaluation entry point: scans all harvested signals against rule catalog.
+ * Routes through the schema-v2 NormalizedEvidence adapter into evaluateNormalizedEvidence.
  */
 export function evaluateSignals(
   signals: HarvestedSignals,
   rules: TechRule[] = ALL_RULES
 ): ScanResult {
-  const startTime = performance.now();
+  const plan =
+    rules === ALL_RULES
+      ? cachedDefaultProbePlan || (cachedDefaultProbePlan = compileProbeExecutionPlan(CANONICAL_TECHNOLOGY_DEFINITIONS))
+      : compileLegacyProbeExecutionPlan(rules);
 
-  const detectedMap = new Map<string, DetectedTechnology>();
-
-  // Evaluate each rule
-  for (const rule of rules) {
-    const result = evaluateRule(rule, signals);
-    if (result) {
-      detectedMap.set(result.id, result);
-    }
-  }
-
-  // Resolve implied dependencies
-  resolveImpliedTechnologies(detectedMap, rules);
-
-  // Convert to sorted array (confidence descending, then name ascending)
-  const technologies = Array.from(detectedMap.values()).sort((a, b) => {
-    if (b.confidenceScore !== a.confidenceScore) {
-      return b.confidenceScore - a.confidenceScore;
-    }
-    return a.name.localeCompare(b.name);
-  });
-
-  // Calculate statistics
-  let high = 0;
-  let medium = 0;
-  let low = 0;
-
-  for (const tech of technologies) {
-    if (tech.confidenceTier === 'high') high++;
-    else if (tech.confidenceTier === 'medium') medium++;
-    else low++;
-  }
-
-  const endTime = performance.now();
-  const scanDurationMs = Math.round((endTime - startTime) * 100) / 100;
-
-  // Extract domain
-  let domain = signals.url;
-  try {
-    const parsed = new URL(signals.url);
-    domain = parsed.hostname;
-  } catch {
-    // Keep raw string if not a valid URL
-  }
-
-  return {
-    url: normalizeScanUrl(signals.url),
-    domain,
-    timestamp: Date.now(),
-    technologies,
-    stats: {
-      total: technologies.length,
-      high,
-      medium,
-      low,
-    },
-    engineEvaluationDurationMs: scanDurationMs,
-    scanDurationMs,
-  };
+  const normalizedEvidence = matchHarvestedSignalsToNormalizedEvidence(plan, signals);
+  return evaluateNormalizedEvidence(normalizedEvidence, { url: signals.url, signals, legacyRules: rules });
 }

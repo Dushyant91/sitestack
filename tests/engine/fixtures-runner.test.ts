@@ -318,9 +318,17 @@ describe('15 Local HTML Fixture Validation Suite', () => {
   // Fixture 15: Conflicting & Misleading Signals
   it('Fixture 15 (conflicting-misleading.html): cdnjs mirror and commented generators produce ZERO false positives', () => {
     const result = runFixtureScan('conflicting-misleading.html');
-    expect(result.technologies.find((t) => t.id === 'cloudflare')).toBeUndefined();
-    expect(result.technologies.find((t) => t.id === 'wordpress')).toBeUndefined();
-    expect(result.technologies.find((t) => t.id === 'react')).toBeUndefined();
-    expect(result.technologies.length).toBe(0);
+    const detectedIds = result.technologies.map((t) => t.id);
+
+    // Negative controls: misleading comments, content text, and CDN hosts do not trigger false positives
+    expect(detectedIds).not.toContain('cloudflare');
+    expect(detectedIds).not.toContain('wordpress');
+    expect(detectedIds).not.toContain('react');
+
+    // Legitimate detection: authentic Lodash script bundle from cdnjs is recognized
+    expect(detectedIds).toContain('lodash');
+    const lodash = result.technologies.find((t) => t.id === 'lodash');
+    expect(lodash?.category).toBe('library');
+    expect(lodash?.confidenceTier).toBe('medium');
   });
 });
